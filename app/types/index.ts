@@ -1,44 +1,45 @@
-export type UserRole = 'admin' | 'koordinator' | 'sorumlu' | 'izleyici';
+export type UserRole = 'admin' | 'user';
 
 export interface User {
-    uid: string;
-    username: string;
-    displayName: string;
-    role: UserRole;
-    active: boolean;
-    createdAt: number;
-    password?: string;
-}
-
-export interface Province {
     id: string;
-    name: string;
-    active: boolean;
-    ilSorumlusuId?: string;
-    ilSorumlusuName?: string;
-    koordinatorId?: string;
-    koordinatorName?: string;
-    sorumluId?: string;
-    sorumluName?: string;
-    updatedAt: number;
+    username: string;
+    password?: string;
+    role: UserRole;
+    managedProvinces: string[];
+    createdAt: string;
 }
 
 export type EntryStatus = 'Görüşüldü' | 'Görüşülmedi' | 'Tekrar Görüşülecek';
 
 export interface Entry {
     id: string;
-    provinceName: string;
-    ilSorumlusuName: string;
-    koordinatorName: string;
-    sorumluName: string;
-    koordinatorId: string;
-    sorumluId: string;
-    meetingDate: string;
-    notes: string;
+    province: string;
+    district: string;
+    managerName: string;
+    managerPhone: string;
     status: EntryStatus;
-    createdAt: number;
+    notes: string;
+    date: string;
+    createdBy: string;
+    managerTitle?: string;
+    history?: Entry[];
+}
+
+export interface Province {
+    id: string;
+    name: string;
+    isActive: boolean;
 }
 
 export const PROVINCES_ALL = [
-    "ADANA", "ADIYAMAN", "AFYONKARAHİSAR", "AĞRI", "AKSARAY", "AMASYA", "ANKARA", "ANTALYA", "ARDAHAN", "ARTVİN", "AYDIN", "BALIKESİR", "BARTIN", "BATMAN", "BAYBURT", "BİLECİK", "BİNGÖL", "BİTLİS", "BOLU", "BURDUR", "BURSA", "ÇANAKKALE", "ÇANKIRI", "ÇORUM", "DENİZLİ", "DİYARBAKIR", "DÜZCE", "EDİRNE", "ELAZIĞ", "ERZİNCAN", "ERZURUM", "ESKİŞEHİR", "GAZİANTEP", "GİRESUN", "GÜMÜŞHANE", "HAKKARİ", "HATAY", "IĞDIR", "ISPARTA", "İSTANBUL", "İZMİR", "KAHRAMANMARAŞ", "KARABÜK", "KARAMAN", "KARS", "KASTAMONU", "KAYSERİ", "KIRIKKALE", "KIRKLARELİ", "KIRŞEHİR", "KİLİS", "KOCAELİ", "KONYA", "KÜTAHYA", "MALATYA", "MANİSA", "MARDİN", "MERSİN", "MUĞLA", "MUŞ", "NEVŞEHİR", "NİĞDE", "ORDU", "OSMANİYE", "RİZE", "SAKARYA", "SAMSUN", "SİİRT", "SİNOP", "SİVAS", "ŞANLIURFA", "ŞIRNAK", "TEKİRDAĞ", "TOKAT", "TRABZON", "TUNCELİ", "UŞAK", "VAN", "YALOVA", "YOZGAT", "ZONGULDAK"
+    "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin",
+    "Aydın", "Balıkesir", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa",
+    "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Edirne", "Elazığ", "Erzincan",
+    "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Isparta",
+    "Mersin", "İstanbul", "İzmir", "Kars", "Kastamonu", "Kayseri", "Kırklareli", "Kırşehir",
+    "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Kahramanmaraş", "Mardin", "Muğla",
+    "Muş", "Nevşehir", "Niğde", "Ordu", "Rize", "Sakarya", "Samsun", "Siirt",
+    "Sinop", "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Şanlıurfa", "Uşak",
+    "Van", "Yozgat", "Zonguldak", "Aksaray", "Bayburt", "Karaman", "Kırıkkale", "Batman",
+    "Şırnak", "Bartın", "Ardahan", "Iğdır", "Yalova", "Karabük", "Kilis", "Osmaniye", "Düzce"
 ];
