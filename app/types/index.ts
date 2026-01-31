@@ -6,42 +6,39 @@ export interface User {
     displayName: string;
     role: UserRole;
     active: boolean;
-    createdAt: number; // timestamp
+    createdAt: number;
+    password?: string;
 }
 
 export interface Province {
-    id: string; // generated
-    name: string; // e.g. "İstanbul"
+    id: string;
+    name: string;
     active: boolean;
-
     ilSorumlusuId?: string;
     ilSorumlusuName?: string;
-
     koordinatorId?: string;
     koordinatorName?: string;
-
     sorumluId?: string;
     sorumluName?: string;
-
     updatedAt: number;
 }
 
 export type EntryStatus = 'Görüşüldü' | 'Görüşülmedi' | 'Tekrar Görüşülecek';
 
 export interface Entry {
-    id: string; // generated
-    provinceName: string; // Denormalized for easy display
-
+    id: string;
+    provinceName: string;
     ilSorumlusuName: string;
     koordinatorName: string;
     sorumluName: string;
-
-    koordinatorId: string; // For permission checks
-    sorumluId: string;     // For permission checks
-
-    meetingDate: string; // Display text like "8 Ocak - 10 Ocak"
+    koordinatorId: string;
+    sorumluId: string;
+    meetingDate: string;
     notes: string;
     status: EntryStatus;
-
     createdAt: number;
 }
+
+export const PROVINCES_ALL = [
+    "ADANA", "ADIYAMAN", "AFYONKARAHİSAR", "AĞRI", "AKSARAY", "AMASYA", "ANKARA", "ANTALYA", "ARDAHAN", "ARTVİN", "AYDIN", "BALIKESİR", "BARTIN", "BATMAN", "BAYBURT", "BİLECİK", "BİNGÖL", "BİTLİS", "BOLU", "BURDUR", "BURSA", "ÇANAKKALE", "ÇANKIRI", "ÇORUM", "DENİZLİ", "DİYARBAKIR", "DÜZCE", "EDİRNE", "ELAZIĞ", "ERZİNCAN", "ERZURUM", "ESKİŞEHİR", "GAZİANTEP", "GİRESUN", "GÜMÜŞHANE", "HAKKARİ", "HATAY", "IĞDIR", "ISPARTA", "İSTANBUL", "İZMİR", "KAHRAMANMARAŞ", "KARABÜK", "KARAMAN", "KARS", "KASTAMONU", "KAYSERİ", "KIRIKKALE", "KIRKLARELİ", "KIRŞEHİR", "KİLİS", "KOCAELİ", "KONYA", "KÜTAHYA", "MALATYA", "MANİSA", "MARDİN", "MERSİN", "MUĞLA", "MUŞ", "NEVŞEHİR", "NİĞDE", "ORDU", "OSMANİYE", "RİZE", "SAKARYA", "SAMSUN", "SİİRT", "SİNOP", "SİVAS", "ŞANLIURFA", "ŞIRNAK", "TEKİRDAĞ", "TOKAT", "TRABZON", "TUNCELİ", "UŞAK", "VAN", "YALOVA", "YOZGAT", "ZONGULDAK"
+];
