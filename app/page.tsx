@@ -1,26 +1,27 @@
-"use client";
-import { Search, Plus, MoreVertical, LayoutGrid, Map, Calendar, Trash2, Sun, Moon, Settings } from "lucide-react";
+import { Search, Plus, MoreVertical, LayoutGrid, Map, Calendar, Trash2, Sun, Moon, Settings, Sparkles } from "lucide-react";
 import clsx from "clsx";
 import React, { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
-import { useAuth } from './context/AuthContext';
-import { StorageService } from './services/storage';
-import { Entry, EntryStatus, User } from './types';
-import Modal from './components/Modal';
-import EntryForm from './components/EntryForm';
+import { FirebaseStorage } from "./services/firebaseStorage";
+import { Entry, EntryStatus, User } from "./types";
+import { useAuth } from "./context/AuthContext";
+import Modal from "./components/Modal";
+import EntryForm from "./components/EntryForm";
+import ProvinceHistory from "./components/ProvinceHistory";
+import * as XLSX from 'xlsx';
 
 // Badge Component - Apple Style
 function Badge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     "Görüşüldü": "bg-success-bg text-success border border-success/20 animate-glow-success",
     "Görüşülmedi": "bg-error-bg text-error border border-error/20 animate-glow-error",
-    "Tekrar Görüşülecek": "bg-info-bg text-info border border-info/20 animate-glow-info",
+    "Tekrar Görüşülecek": "bg-gradient-to-br from-[#00d2ff]/20 to-[#3a7bd5]/10 text-[#1d1d1f] dark:text-[#a0f2ff] border border-[#00d2ff]/30 animate-glow-info shadow-[0_2px_8px_rgba(0,210,255,0.15)]",
   };
 
   const currentStyle = styles[status] || "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400";
 
   return (
-    <span className={clsx("px-2.5 py-1 rounded-full text-[11px] font-bold tracking-tight inline-flex items-center gap-1.5 transition-all duration-300", currentStyle)}>
+    <span className={clsx("px-2.5 py-1 rounded-full text-[11px] font-black tracking-tight inline-flex items-center gap-1.5 transition-all duration-300", currentStyle)}>
       <span className={clsx("w-1.5 h-1.5 rounded-full animate-pulse",
         status === "Görüşüldü" ? "bg-success" :
           status === "Görüşülmedi" ? "bg-error" : "bg-info"
@@ -31,30 +32,20 @@ function Badge({ status }: { status: string }) {
 }
 
 export default function Dashboard() {
-  const { user, login, logout, isLoading: authLoading } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-
+  const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [historyProvince, setHistoryProvince] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  // Search State
-  const [searchInput, setSearchInput] = useState("");
-
-  // Statistics
-  const stats = {
-    total: entries.length,
-    completed: entries.filter(e => e.status === 'Görüşüldü').length,
-    pending: entries.filter(e => e.status === 'Görüşülmedi').length,
-    followUp: entries.filter(e => e.status === 'Tekrar Görüşülecek').length
-  };
-
+  // Load theme
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
     if (savedTheme) {
       setTheme(savedTheme);
       document.documentElement.classList.toggle('dark', savedTheme === 'dark');
@@ -62,349 +53,267 @@ export default function Dashboard() {
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
-  const refreshData = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setEntries(StorageService.getEntries());
-      setUsers(StorageService.getUsers());
-      setLoading(false);
-    }, 300);
-  };
-
   useEffect(() => {
-    refreshData();
-  }, []);
+    if (!user) {
+      router.push("/login");
+      return;
+    }
 
-  const filteredEntries = entries.filter(entry => {
-    if (!searchInput) return true;
-    const lowerSearch = searchInput.toLocaleLowerCase('tr-TR');
+    const fetchData = async () => {
+      try {
+        const [entriesData, usersData] = await Promise.all([
+          FirebaseStorage.getEntries(),
+          FirebaseStorage.getUsers()
+        ]);
+        setEntries(entriesData);
+        setUsers(usersData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const searchFields = [
-      entry.provinceName,
-      entry.ilSorumlusuName,
-      entry.koordinatorName,
-      entry.sorumluName,
-      entry.meetingDate,
-      entry.notes,
-      entry.status
-    ].map(f => (f || "").toLocaleLowerCase('tr-TR'));
+    fetchData();
+  }, [user, router]);
 
-    return searchFields.some(field => field.includes(lowerSearch));
-  });
-
-  const handleCreateNew = () => {
-    setEditingEntry(null);
-    setIsModalOpen(true);
+  const stats = {
+    total: entries.length,
+    completed: entries.filter(e => e.status === "Görüşüldü").length,
+    pending: entries.filter(e => e.status === "Görüşülmedi").length,
+    followUp: entries.filter(e => e.status === "Tekrar Görüşülecek").length,
   };
+
+  const filteredEntries = entries.filter(e =>
+    e.provinceName.toLowerCase().includes(search.toLowerCase()) ||
+    e.koordinatorName.toLowerCase().includes(search.toLowerCase()) ||
+    e.sorumluName.toLowerCase().includes(search.toLowerCase()) ||
+    e.ilSorumlusuName.toLowerCase().includes(search.toLowerCase())
+  );
 
   const handleEdit = (entry: Entry) => {
     setEditingEntry(entry);
     setIsModalOpen(true);
   };
 
-  const handleFormSubmit = (data: Partial<Entry>) => {
-    if (editingEntry) {
-      StorageService.updateEntry(editingEntry.id, data);
-    } else {
-      const newEntry: Entry = {
-        id: StorageService.generateId(),
-        createdAt: Date.now(),
-        provinceName: data.provinceName || 'Bilinmiyor',
-        ilSorumlusuName: data.ilSorumlusuName || '',
-        koordinatorName: data.koordinatorName || '',
-        sorumluName: data.sorumluName || '',
-        koordinatorId: data.koordinatorId || '',
-        sorumluId: data.sorumluId || '',
-        status: data.status as EntryStatus || 'Görüşülmedi',
-        meetingDate: data.meetingDate || '',
-        notes: data.notes || '',
-      };
-      StorageService.createEntry(newEntry);
+  const handleCreate = () => {
+    setEditingEntry(null);
+    setIsModalOpen(true);
+  };
 
-      // Success Animation Trigger
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
+  const handleSubmit = async (data: Partial<Entry>) => {
+    if (editingEntry) {
+      const updated = await FirebaseStorage.updateEntry(editingEntry.id, data);
+      setEntries(entries.map(e => e.id === editingEntry.id ? updated : e));
+    } else {
+      const created = await FirebaseStorage.createEntry(data as any);
+      setEntries([created, ...entries]);
     }
     setIsModalOpen(false);
-    refreshData();
   };
 
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const closeMenu = () => setOpenMenuId(null);
-    window.addEventListener('click', closeMenu);
-    return () => window.removeEventListener('click', closeMenu);
-  }, []);
-
-  const toggleMenu = (id: string) => {
-    setOpenMenuId(prev => prev === id ? null : id);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('Bu kaydı silmek istediğinize emin misiniz?')) {
-      StorageService.deleteEntry(id);
-      refreshData();
+  const handleDelete = async (id: string) => {
+    if (confirm("Bu kaydı silmek istediğinize emin misiniz?")) {
+      await FirebaseStorage.deleteEntry(id);
+      setEntries(entries.filter(e => e.id !== id));
     }
   };
 
-  if (authLoading) return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="animate-pulse text-foreground/60 text-sm font-medium">Yükleniyor...</div>
-    </div>
-  );
+  const exportToExcel = () => {
+    const exportData = filteredEntries.map(e => ({
+      "İl": e.provinceName,
+      "İl Sorumlusu": e.ilSorumlusuName,
+      "Koordinatör": e.koordinatorName,
+      "Sorumlu": e.sorumluName,
+      "Durum": e.status,
+      "Görüşme Tarihi": e.meetingDate,
+      "Notlar": e.notes,
+      "Oluşturma": e.createdAt,
+      "Güncelleme": e.updatedAt
+    }));
 
-  if (!user) {
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Süreç Takip");
+    XLSX.writeFile(wb, `surec_takip_${new Date().toISOString().split('T')[0]}.xlsx`);
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
-        <div className="w-full max-w-md space-y-8 animate-fade-in">
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-semibold tracking-tight text-foreground">KONYEVİ GENÇLİK</h1>
-            <p className="text-sm text-foreground/60">Teşkilat Süreç Yönetimi</p>
-          </div>
-
-          <div className="space-y-3">
-            {users.map((u) => {
-              const roleColors: Record<string, string> = {
-                admin: "text-primary bg-primary/10",
-                koordinator: "text-indigo-500 bg-indigo-500/10",
-                sorumlu: "text-success bg-success/10",
-                izleyici: "text-foreground/40 bg-surface",
-              };
-
-              const roleLabels: Record<string, string> = {
-                admin: "Tam yetkili yönetim",
-                koordinator: "Koordinasyon yönetimi",
-                sorumlu: "İl not girişi",
-                izleyici: "Sadece görüntüleme",
-              };
-
-              return (
-                <button
-                  key={u.uid}
-                  onClick={() => login(u.username)}
-                  className="w-full flex items-center gap-4 px-6 py-4 bg-card hover:bg-hover border border-border rounded-2xl transition-all duration-200 group active:scale-[0.98]"
-                >
-                  <div className={clsx("w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg", roleColors[u.role] || roleColors.izleyici)}>
-                    {u.displayName[0].toUpperCase()}
-                  </div>
-                  <div className="text-left flex-1">
-                    <div className="font-semibold text-foreground group-hover:text-primary transition-colors">{u.displayName}</div>
-                    <div className="text-xs text-foreground/50">{roleLabels[u.role] || "Kullanıcı"}</div>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="relative w-12 h-12">
+          <div className="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
+          <div className="absolute inset-0 border-4 border-primary rounded-full border-t-transparent animate-spin"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-500 overflow-x-hidden p-4 md:p-8">
+      {/* Background Blurs */}
+      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-success/5 rounded-full blur-[120px] pointer-events-none animate-pulse delay-1000"></div>
 
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={editingEntry ? (user.role === 'admin' ? 'Kaydı Düzenle' : 'Not/Durum Güncelle') : 'Yeni Kayıt Oluştur'}
-      >
-        <EntryForm
-          currentUser={user}
-          initialData={editingEntry}
-          onSubmit={handleFormSubmit}
-          onCancel={() => setIsModalOpen(false)}
-        />
-      </Modal>
-
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">KONYEVİ GENÇLİK</h1>
-            <p className="text-xs text-foreground/50 mt-0.5">İl Listesi</p>
+      <div className="max-w-7xl mx-auto space-y-8 relative z-10">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 animate-slide-down">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/60">
+              Süreç Yönetimi
+            </h1>
+            <p className="text-sm font-medium text-foreground/40 flex items-center gap-2">
+              <Calendar size={14} />
+              {new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-hover transition-colors"
-              aria-label="Tema değiştir"
+              className="p-2.5 rounded-full bg-surface border border-border hover:border-foreground/20 transition-all active:scale-95 group"
             >
-              {theme === 'dark' ?
-                <Sun size={18} className="text-foreground/70" /> :
-                <Moon size={18} className="text-foreground/70" />
-              }
+              {theme === 'light' ? <Moon size={20} className="group-hover:rotate-12 transition-transform" /> : <Sun size={20} className="group-hover:rotate-12 transition-transform" />}
             </button>
-
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-end">
-                <span className="text-sm font-medium text-foreground">{user.displayName}</span>
-                <span className="text-xs text-foreground/50 capitalize">{user.role}</span>
-              </div>
-            </div>
+            
+            {user?.role === 'admin' && (
+              <button
+                onClick={() => router.push("/admin")}
+                className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-border hover:border-foreground/20 rounded-full font-semibold text-sm transition-all active:scale-95"
+              >
+                <Settings size={18} />
+                Panel
+              </button>
+            )}
 
             <button
               onClick={logout}
-              className="px-4 py-2 bg-card hover:bg-hover text-foreground text-sm font-medium rounded-full transition-all duration-200 active:scale-95"
+              className="px-5 py-2.5 bg-error/10 hover:bg-error/20 text-error border border-error/20 rounded-full font-bold text-sm transition-all active:scale-95"
             >
               Çıkış
             </button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <main className="max-w-[1400px] mx-auto px-6 py-8">
-        {/* Statistics Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-pop-up">
           <StatCard label="Toplam Kayıt" value={stats.total} icon={<LayoutGrid size={18} />} color="blue" />
           <StatCard label="Görüşüldü" value={stats.completed} icon={<div className="w-2 h-2 rounded-full bg-success" />} color="green" />
           <StatCard label="Görüşülmedi" value={stats.pending} icon={<div className="w-2 h-2 rounded-full bg-error" />} color="red" />
-          <StatCard label="Tekrar Görüşülecek" value={stats.followUp} icon={<div className="w-2 h-2 rounded-full bg-info" />} color="orange" />
+          <StatCard label="Tekrar Görüşülecek" value={stats.followUp} icon={<div className="w-2 h-2 rounded-full bg-warning" />} color="orange" />
         </div>
 
         {/* Controls */}
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <button className="px-4 py-2 bg-foreground text-background text-sm font-medium rounded-full transition-all duration-200 active:scale-95">
-              <LayoutGrid size={14} className="inline mr-2" />
-              İl Listesi
-            </button>
-            <button className="px-4 py-2 text-foreground/60 hover:text-foreground text-sm font-medium rounded-full hover:bg-hover transition-all duration-200 active:scale-95">
-              <Map size={14} className="inline mr-2" />
-              Bölge Listesi
-            </button>
-            <button className="px-4 py-2 text-foreground/60 hover:text-foreground text-sm font-medium rounded-full hover:bg-hover transition-all duration-200 active:scale-95">
-              <Calendar size={14} className="inline mr-2" />
-              Görüşme Takvimi
-            </button>
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-card/50 backdrop-blur-xl border border-border p-4 rounded-3xl animate-slide-up shadow-sm">
+          <div className="relative w-full md:w-96 group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40 group-focus-within:text-primary transition-colors" size={18} />
+            <input
+              type="text"
+              placeholder="İl, sorumlu veya koordinatöre göre ara..."
+              className="w-full pl-12 pr-4 py-3 bg-surface/50 border border-border rounded-2xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all placeholder:text-foreground/30"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
 
-          <div className="flex items-center gap-3 w-full lg:w-auto">
-            <div className="relative flex-1 lg:flex-none">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={16} />
-              <input
-                type="text"
-                placeholder="Ara..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-card border border-border rounded-full text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all w-full lg:w-64"
-              />
-            </div>
-
-            {user.role === 'admin' && (
-              <>
-                <button
-                  onClick={handleCreateNew}
-                  className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow whitespace-nowrap"
-                >
-                  <Plus size={16} />
-                  Yeni Kayıt
-                </button>
-
-                <button
-                  onClick={() => router.push('/admin')}
-                  className="px-5 py-2 bg-card hover:bg-hover text-foreground border border-border rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2"
-                >
-                  <Settings size={14} />
-                  Admin Paneli
-                </button>
-              </>
+          <div className="flex w-full md:w-auto gap-3">
+            <button
+              onClick={exportToExcel}
+              className="flex-1 md:flex-none justify-center items-center gap-2 px-6 py-3 bg-surface border border-border hover:border-foreground/20 rounded-2xl font-bold text-sm transition-all active:scale-95 flex"
+            >
+              Excel Aktar
+            </button>
+            {(user?.role === 'admin' || user?.role === 'koordinator') && (
+              <button
+                onClick={handleCreate}
+                className="flex-1 md:flex-none justify-center items-center gap-2 px-6 py-3 bg-foreground text-background hover:opacity-90 rounded-2xl font-bold text-sm transition-all active:scale-95 flex shadow-lg shadow-foreground/10"
+              >
+                <Plus size={18} strokeWidth={3} />
+                Yeni Kayıt
+              </button>
             )}
           </div>
         </div>
 
         {/* Table */}
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-card/30 backdrop-blur-xl border border-border rounded-[32px] overflow-hidden animate-slide-up shadow-xl">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-border bg-card">
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-foreground/60 uppercase tracking-wider">İl</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-foreground/60 uppercase tracking-wider">İl Sorumlusu</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-foreground/60 uppercase tracking-wider">Koordinatör</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-foreground/60 uppercase tracking-wider">Sorumlu</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-foreground/60 uppercase tracking-wider">Durum</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-foreground/60 uppercase tracking-wider">Tarih</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-foreground/60 uppercase tracking-wider">Notlar</th>
-                  <th className="px-6 py-4"></th>
+                <tr className="bg-foreground/[0.02] border-b border-border">
+                  <th className="px-6 py-5 text-[11px] font-black uppercase tracking-widest text-foreground/40">İl</th>
+                  <th className="px-6 py-5 text-[11px] font-black uppercase tracking-widest text-foreground/40">Koordinatör</th>
+                  <th className="px-6 py-5 text-[11px] font-black uppercase tracking-widest text-foreground/40">Durum</th>
+                  <th className="px-6 py-5 text-[11px] font-black uppercase tracking-widest text-foreground/40">Görüşme Tarihi</th>
+                  <th className="px-6 py-5 text-[11px] font-black uppercase tracking-widest text-foreground/40">İşlemler</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {loading ? (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-12 text-center text-sm text-foreground/50">
-                      <div className="animate-pulse">Yükleniyor...</div>
-                    </td>
-                  </tr>
-                ) : filteredEntries.map((row) => (
+                {filteredEntries.map((row, idx) => (
                   <tr
                     key={row.id}
                     onClick={() => handleEdit(row)}
-                    className="group hover:bg-hover transition-all duration-300 cursor-pointer hover:translate-x-1 border-transparent border-l-2 hover:border-primary/30"
+                    className="group hover:bg-foreground/[0.02] transition-colors cursor-pointer animate-fade-in"
+                    style={{ animationDelay: `${idx * 50}ms` }}
                   >
                     <td className="px-6 py-4">
-                      <span className="font-semibold text-foreground text-sm">{row.provinceName}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-surface flex items-center justify-center text-xs font-semibold text-foreground/70">
-                          {(row.ilSorumlusuName || '?').slice(0, 1).toUpperCase()}
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-black text-sm tracking-tight">{row.provinceName}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-foreground/10"></span>
+                          <span className="text-[10px] font-bold text-foreground/30 uppercase tracking-tighter">{row.ilSorumlusuName || '-'}</span>
                         </div>
-                        <span className="text-sm text-foreground/80">{row.ilSorumlusuName || '-'}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="px-3 py-1 bg-warning-bg text-warning rounded-full text-xs font-semibold">
-                        {row.koordinatorName || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-3 py-1 bg-surface text-foreground/70 rounded-full text-xs font-medium">
-                        {row.sorumluName || '-'}
-                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-br from-[#00d2ff]/15 to-[#3a7bd5]/5 text-[#1d1d1f] dark:text-[#00d2ff] border border-[#00d2ff]/30 rounded-full text-[11px] font-black tracking-tight shadow-[0_1px_4px_rgba(0,210,255,0.15)] transition-all duration-300 hover:shadow-[0_4px_12px_rgba(0,210,255,0.25)] hover:scale-105 whitespace-nowrap">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#00d2ff] shadow-[0_0_8px_#00d2ff] animate-pulse shrink-0"></span>
+                          {row.koordinatorName || '-'}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <Badge status={row.status} />
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs text-foreground/60">{row.meetingDate}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-xs text-foreground/70 line-clamp-1 max-w-xs" title={row.notes}>
-                        {row.notes}
+                      <span className="px-3 py-1 bg-surface text-foreground/70 rounded-full text-xs font-medium border border-border/50">
+                        {row.meetingDate || '-'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => toggleMenu(row.id)}
-                          className="p-2 rounded-full hover:bg-surface transition-colors"
+                          onClick={() => handleEdit(row)}
+                          className="p-2 rounded-full hover:bg-surface text-foreground/40 hover:text-primary transition-all group"
+                          title="Düzenle"
                         >
-                          <MoreVertical size={16} className="text-foreground/40" />
+                          <Sparkles size={14} className="group-hover:rotate-12 group-hover:scale-110 transition-transform duration-300" />
                         </button>
-
-                        {openMenuId === row.id && (
-                          <div className="absolute right-0 top-10 w-44 bg-card border border-border rounded-xl shadow-lg overflow-hidden animate-slide-in z-50">
-                            {user.role === 'admin' ? (
-                              <button
-                                onClick={() => handleDelete(row.id)}
-                                className="w-full text-left px-4 py-3 text-error hover:bg-error-bg text-sm font-medium transition-colors flex items-center gap-2"
-                              >
-                                <Trash2 size={14} />
-                                Kaydı Sil
-                              </button>
-                            ) : (
-                              <div className="px-4 py-3 text-foreground/40 text-xs">İşlem yok</div>
-                            )}
+                        {user?.role === 'admin' && (
+                          <div className="relative" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleDelete(row.id)}
+                              className="p-2 rounded-full hover:bg-error/10 text-foreground/40 hover:text-error transition-all"
+                              title="Sil"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
                         )}
+                        <button
+                          onClick={() => setHistoryProvince(row.provinceName)}
+                          className="p-2 rounded-full hover:bg-surface text-foreground/40 hover:text-primary transition-all"
+                          title="Geçmiş"
+                        >
+                          <Map size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -412,51 +321,37 @@ export default function Dashboard() {
               </tbody>
             </table>
           </div>
-
-          <div className="px-6 py-4 border-t border-border bg-surface/30 flex items-center justify-between">
-            <span className="text-xs text-foreground/50">Toplam {entries.length} kayıt</span>
-            <div className="flex items-center gap-4 text-xs">
-              <button className="text-foreground/50 hover:text-foreground transition-colors font-medium">Önceki</button>
-              <span className="text-foreground/30">|</span>
-              <button className="text-foreground/50 hover:text-foreground transition-colors font-medium">Sonraki</button>
-            </div>
-          </div>
         </div>
-      </main>
+      </div>
 
-      {/* Success Animation Overlay */}
-      {showSuccess && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
-          <div className="bg-white dark:bg-[#1d1d1f] px-12 py-16 rounded-[40px] shadow-[0_20px_60px_rgba(0,0,0,0.3)] border border-border flex flex-col items-center gap-8 animate-pop-up">
-
-            {/* CSS Animated Bear Mascot - Fixed Brown Style */}
-            <div className="mascot-container animate-mascot">
-              <div className="bear-ear ear-left">
-                <div className="ear-inner"></div>
-              </div>
-              <div className="bear-ear ear-right">
-                <div className="ear-inner"></div>
-              </div>
-              <div className="bear-body">
-                <div className="bear-eye eye-left"></div>
-                <div className="bear-eye eye-right"></div>
-                <div className="bear-muzzle">
-                  <div className="bear-muzzle-nose"></div>
-                  <div className="bear-muzzle-mouth"></div>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center space-y-2">
-              <h3 className="text-3xl font-bold text-[#1d1d1f] dark:text-white">Başarıyla Kaydedildi!</h3>
-              <p className="text-lg text-foreground/60">Kaydınız başarıyla sisteme eklendi.</p>
-            </div>
-
-            <div className="flex gap-4 text-3xl animate-bounce">
-              <span>✨</span><span>🎉</span><span>✨</span>
-            </div>
+      {/* Modal for Edit/Create */}
+      {isModalOpen && (
+        <Modal
+          title={editingEntry ? "Not/Durum Güncelle" : "Yeni Kayıt Oluştur"}
+          onClose={() => setIsModalOpen(false)}
+        >
+          <div className="p-1">
+            <EntryForm
+              initialData={editingEntry}
+              currentUser={user!}
+              onSubmit={handleSubmit}
+              onCancel={() => setIsModalOpen(false)}
+            />
           </div>
-        </div>
+        </Modal>
+      )}
+
+      {/* History Modal */}
+      {historyProvince && (
+        <Modal
+          title={`${historyProvince} İli Geçmişi`}
+          onClose={() => setHistoryProvince(null)}
+        >
+          <ProvinceHistory
+            provinceName={historyProvince}
+            entries={entries.filter(e => e.provinceName === historyProvince)}
+          />
+        </Modal>
       )}
     </div>
   );
@@ -467,18 +362,20 @@ function StatCard({ label, value, icon, color }: { label: string, value: number,
     blue: "text-blue-500 bg-blue-500/10",
     green: "text-success bg-success-bg",
     red: "text-error bg-error-bg",
-    orange: "text-info bg-info-bg",
+    orange: "text-[#00838f] bg-[#00d2ff]/10",
   };
 
   return (
-    <div className="bg-card border border-border p-5 rounded-[24px] shadow-sm hover:shadow-md transition-all duration-300">
-      <div className="flex items-center justify-between mb-3">
-        <div className={clsx("p-2 rounded-xl", colors[color])}>
+    <div className="p-5 bg-card/40 backdrop-blur-md border border-border rounded-[28px] space-y-3 hover:shadow-lg transition-all duration-300 group">
+      <div className="flex items-center justify-between">
+        <div className={clsx("p-2.5 rounded-2xl transition-transform group-hover:scale-110", colors[color])}>
           {icon}
         </div>
-        <span className="text-2xl font-bold tracking-tight">{value}</span>
+        <span className="text-2xl font-black tracking-tighter">{value}</span>
       </div>
-      <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">{label}</p>
+      <div>
+        <p className="text-[10px] font-black uppercase tracking-widest text-foreground/30">{label}</p>
+      </div>
     </div>
   );
 }

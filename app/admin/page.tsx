@@ -1,93 +1,86 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, MapPin, ClipboardList, Plus, Trash2, Save, Send } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import { StorageService } from "../services/storage";
-import { User, Province, UserRole } from "../types";
-import clsx from "clsx";
-
-const PROVINCES_ALL = ["ADANA", "ADIYAMAN", "AFYONKARAHİSAR", "AĞRI", "AKSARAY", "AMASYA", "ANKARA", "ANTALYA", "ARDAHAN", "ARTVİN", "AYDIN", "BALIKESİR", "BARTIN", "BATMAN", "BAYBURT", "BİLECİK", "BİNGÖL", "BİTLİS", "BOLU", "BURDUR", "BURSA", "ÇANAKKALE", "ÇANKIRI", "ÇORUM", "DENİZLİ", "DİYARBAKIR", "DÜZCE", "EDİRNE", "ELAZIĞ", "ERZİNCAN", "ERZURUM", "ESKİŞEHİR", "GAZİANTEP", "GİRESUN", "GÜMÜŞHANE", "HAKKARİ", "HATAY", "IĞDIR", "ISPARTA", "İSTANBUL", "İZMİR", "KAHRAMANMARAŞ", "KARABÜK", "KARAMAN", "KARS", "KASTAMONU", "KAYSERİ", "KIRIKKALE", "KIRKLARELİ", "KIRŞEHİR", "KİLİS", "KOCAELİ", "KONYA", "KÜTAHYA", "MALATYA", "MANİSA", "MARDİN", "MERSİN", "MUĞLA", "MUŞ", "NEVŞEHİR", "NİĞDE", "ORDU", "OSMANİYE", "RİZE", "SAKARYA", "SAMSUN", "SİİRT", "SİNOP", "SİVAS", "ŞANLIURFA", "ŞIRNAK", "TEKİRDAĞ", "TOKAT", "TRABZON", "TUNCELİ", "UŞAK", "VAN", "YALOVA", "YOZGAT", "ZONGULDAK"];
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, Users, Map, BarChart3, ChevronLeft, ArrowRight, CheckCircle2, LayoutGrid } from "lucide-react";
+import { FirebaseStorage } from '../services/firebaseStorage';
+import { User, Province, PROVINCES_ALL } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { useRouter } from 'next/navigation';
+import clsx from 'clsx';
 
 export default function AdminPage() {
     const { user } = useAuth();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'users' | 'provinces' | 'reports'>('reports');
+    const [activeTab, setActiveTab] = useState<'analysis' | 'requests' | 'users' | 'provinces'>('analysis');
+    const [users, setUsers] = useState<User[]>([]);
+    const [tracked, setTracked] = useState<Province[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Security Check
     useEffect(() => {
         if (!user || user.role !== 'admin') {
-            router.push('/');
+            router.push("/");
+            return;
         }
+
+        const fetchData = async () => {
+            const [u, t] = await Promise.all([
+                FirebaseStorage.getUsers(),
+                FirebaseStorage.getTrackedProvinces()
+            ]);
+            setUsers(u);
+            setTracked(t);
+            setLoading(false);
+        };
+        fetchData();
     }, [user, router]);
 
-    if (!user || user.role !== 'admin') return null;
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    );
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
-            {/* Header */}
-            <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
-                <div className="max-w-[1200px] mx-auto px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => router.push('/')}
-                            className="p-2 rounded-full hover:bg-hover transition-colors"
-                        >
-                            <ArrowLeft size={20} />
-                        </button>
-                        <div>
-                            <h1 className="text-xl font-semibold tracking-tight">Admin Yönetim Paneli</h1>
-                            <p className="text-xs text-foreground/50">Sistem ayarları ve atamalar</p>
-                        </div>
-                    </div>
-                </div>
-            </header>
+        <div className="min-h-screen bg-background">
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row min-h-screen">
+                {/* Sidebar */}
+                <aside className="w-full md:w-64 border-r border-border p-6 space-y-8 bg-card/30 backdrop-blur-xl">
+                    <button
+                        onClick={() => router.push("/")}
+                        className="flex items-center gap-2 text-foreground/60 hover:text-foreground transition-colors group"
+                    >
+                        <ChevronLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                        <span className="font-semibold text-sm">Dashboard</span>
+                    </button>
 
-            <main className="max-w-[1200px] mx-auto px-6 py-8">
-                <div className="flex flex-col md:flex-row gap-8">
-                    {/* Sidebar Tabs */}
-                    <div className="w-full md:w-64 space-y-1">
-                        <TabButton
-                            active={activeTab === 'reports'}
-                            onClick={() => setActiveTab('reports')}
-                            icon={<ClipboardList size={18} />}
-                            label="Rapor İste"
-                        />
-                        <TabButton
-                            active={activeTab === 'users'}
-                            onClick={() => setActiveTab('users')}
-                            icon={<Users size={18} />}
-                            label="Kullanıcı Yönetimi"
-                        />
-                        <TabButton
-                            active={activeTab === 'provinces'}
-                            onClick={() => setActiveTab('provinces')}
-                            icon={<MapPin size={18} />}
-                            label="Takip Edilen İller"
-                        />
-                    </div>
+                    <nav className="space-y-1">
+                        <NavBtn active={activeTab === 'analysis'} onClick={() => setActiveTab('analysis')} icon={<BarChart3 size={18} />} label="Genel Analiz" />
+                        <NavBtn active={activeTab === 'requests'} onClick={() => setActiveTab('requests')} icon={<BarChart3 size={18} />} label="Rapor İste" />
+                        <NavBtn active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<Users size={18} />} label="Kullanıcı Yönetimi" />
+                        <NavBtn active={activeTab === 'provinces'} onClick={() => setActiveTab('provinces')} icon={<Map size={18} />} label="Takip Edilen İller" />
+                    </nav>
+                </aside>
 
-                    {/* Content Area */}
-                    <div className="flex-1 bg-card border border-border rounded-3xl p-8 shadow-sm">
-                        {activeTab === 'reports' && <MassReportView />}
-                        {activeTab === 'users' && <UserManagementView />}
-                        {activeTab === 'provinces' && <ProvinceManagementView />}
-                    </div>
-                </div>
-            </main>
+                {/* Main Content */}
+                <main className="flex-1 p-4 md:p-10 overflow-y-auto">
+                    {activeTab === 'users' && <UserManagement users={users} setUsers={setUsers} />}
+                    {activeTab === 'provinces' && <ProvinceManagement users={users} tracked={tracked} setTracked={setTracked} />}
+                    {activeTab === 'requests' && <MassReporting />}
+                    {activeTab === 'analysis' && <AnalysisView />}
+                </main>
+            </div>
         </div>
     );
 }
 
-function TabButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+function NavBtn({ active, onClick, icon, label }: any) {
     return (
         <button
             onClick={onClick}
             className={clsx(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200",
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300",
                 active
-                    ? "bg-primary text-white shadow-md shadow-primary/20"
-                    : "text-foreground/60 hover:text-foreground hover:bg-hover"
+                    ? "bg-primary text-white shadow-lg shadow-primary/25"
+                    : "text-foreground/60 hover:bg-surface hover:text-foreground"
             )}
         >
             {icon}
@@ -96,101 +89,20 @@ function TabButton({ active, onClick, icon, label }: { active: boolean, onClick:
     );
 }
 
-// --- Sub Views ---
+function UserManagement({ users, setUsers }: any) {
+    const [newUser, setNewUser] = useState({ displayName: "", username: "", password: "", role: "sorumlu" });
 
-function MassReportView() {
-    const [dateRange, setDateRange] = useState("");
-    const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-
-    const handleTrigger = () => {
-        if (!dateRange) {
-            setStatus({ type: 'error', message: 'Lütfen bir tarih aralığı giriniz (Örn: 15 Ocak - 20 Ocak)' });
-            return;
-        }
-
-        const count = StorageService.triggerMassReport(dateRange);
-        if (count > 0) {
-            setStatus({ type: 'success', message: `${count} adet yeni rapor satırı başarıyla eklendi.` });
-            setDateRange("");
-        } else {
-            setStatus({ type: 'error', message: 'Takip edilen il bulunamadığı için rapor oluşturulamadı.' });
-        }
-
-        setTimeout(() => setStatus(null), 5000);
+    const handleCreate = async () => {
+        if (!newUser.username || !newUser.password) return;
+        const created = await FirebaseStorage.createUser(newUser as any);
+        setUsers([...users, created]);
+        setNewUser({ displayName: "", username: "", password: "", role: "sorumlu" });
     };
 
-    return (
-        <div className="space-y-6 max-w-md animate-fade-in">
-            <div className="space-y-2">
-                <h2 className="text-2xl font-bold tracking-tight">Rapor İste</h2>
-                <p className="text-sm text-foreground/60">
-                    Takip edilen tüm iller için otomatik olarak yeni birer "Görüşülmedi" satırı oluşturulur.
-                </p>
-            </div>
-
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <label className="text-xs font-semibold text-foreground/70 uppercase">Tarih Aralığı / Periyot</label>
-                    <input
-                        type="text"
-                        placeholder="Örn: 15 Ocak - 20 Ocak"
-                        value={dateRange}
-                        onChange={(e) => setDateRange(e.target.value)}
-                        className="w-full px-4 py-3 bg-background border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                    />
-                </div>
-
-                <button
-                    onClick={handleTrigger}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary hover:bg-primary-hover text-white rounded-2xl font-semibold transition-all shadow-lg shadow-primary/25 active:scale-95"
-                >
-                    <Send size={18} />
-                    Raporları Oluştur
-                </button>
-
-                {status && (
-                    <div className={clsx(
-                        "p-4 rounded-xl text-sm font-medium animate-slide-in",
-                        status.type === 'success' ? "bg-success-bg text-success border border-success/20" : "bg-error-bg text-error border border-error/20"
-                    )}>
-                        {status.message}
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function UserManagementView() {
-    const [users, setUsers] = useState<User[]>([]);
-    const [newUserName, setNewUserName] = useState("");
-    const [newUserUsername, setNewUserUsername] = useState("");
-    const [newUserRole, setNewUserRole] = useState<UserRole>('sorumlu');
-
-    useEffect(() => {
-        setUsers(StorageService.getUsers());
-    }, []);
-
-    const handleAddUser = () => {
-        if (!newUserName || !newUserUsername) return;
-        const newUser: User = {
-            uid: crypto.randomUUID(),
-            username: newUserUsername.toLowerCase(),
-            displayName: newUserName,
-            role: newUserRole,
-            active: true,
-            createdAt: Date.now()
-        };
-        StorageService.createUser(newUser);
-        setUsers([...users, newUser]);
-        setNewUserName("");
-        setNewUserUsername("");
-    };
-
-    const handleDeleteUser = (uid: string) => {
+    const handleDelete = async (uid: string) => {
         if (confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) {
-            StorageService.deleteUser(uid);
-            setUsers(users.filter(u => u.uid !== uid));
+            await FirebaseStorage.deleteUser(uid);
+            setUsers(users.filter((u: any) => u.uid !== uid));
         }
     };
 
@@ -198,126 +110,143 @@ function UserManagementView() {
         <div className="space-y-8 animate-fade-in">
             <div className="space-y-2">
                 <h2 className="text-2xl font-bold tracking-tight">Kullanıcı Yönetimi</h2>
-                <p className="text-sm text-foreground/60">Sistem kullanıcılarını ekleyin, rollerini belirleyin.</p>
+                <p className="text-sm text-foreground/60">Sistem erişimi olan kullanıcıları yönetin.</p>
             </div>
 
-            {/* Add User Form */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 bg-surface/50 border border-border rounded-2xl">
-                <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-foreground/50 uppercase">Ad Soyad</label>
-                    <input
-                        type="text"
-                        value={newUserName}
-                        onChange={(e) => setNewUserName(e.target.value)}
-                        className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm"
-                        placeholder="Örn: Mehmet Can"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-foreground/50 uppercase">Kullanıcı Adı</label>
-                    <input
-                        type="text"
-                        value={newUserUsername}
-                        onChange={(e) => setNewUserUsername(e.target.value)}
-                        className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm"
-                        placeholder="Örn: mehmet123"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-[10px] font-bold text-foreground/50 uppercase">Rol</label>
-                    <select
-                        value={newUserRole}
-                        onChange={(e) => setNewUserRole(e.target.value as UserRole)}
-                        className="w-full px-4 py-2 bg-card border border-border rounded-lg text-sm"
-                    >
-                        <option value="admin">Admin</option>
-                        <option value="koordinator">Koordinatör</option>
-                        <option value="sorumlu">Sorumlu</option>
-                        <option value="izleyici">İzleyici</option>
-                    </select>
-                </div>
-                <div className="flex items-end">
-                    <button
-                        onClick={handleAddUser}
-                        className="w-full py-2 bg-foreground text-background rounded-lg font-semibold text-sm hover:opacity-90 transition-opacity"
-                    >
-                        Ekle
-                    </button>
-                </div>
+            {/* Create User */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-6 bg-surface/50 border border-border rounded-2xl">
+                <input
+                    placeholder="Ad Soyad"
+                    value={newUser.displayName}
+                    onChange={e => setNewUser({ ...newUser, displayName: e.target.value })}
+                    className="px-4 py-2 bg-card border border-border rounded-lg text-sm"
+                />
+                <input
+                    placeholder="Kullanıcı Adı"
+                    value={newUser.username}
+                    onChange={e => setNewUser({ ...newUser, username: e.target.value })}
+                    className="px-4 py-2 bg-card border border-border rounded-lg text-sm"
+                />
+                <input
+                    type="password"
+                    placeholder="Şifre"
+                    value={newUser.password}
+                    onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                    className="px-4 py-2 bg-card border border-border rounded-lg text-sm"
+                />
+                <select
+                    value={newUser.role}
+                    onChange={e => setNewUser({ ...newUser, role: e.target.value as any })}
+                    className="px-4 py-2 bg-card border border-border rounded-lg text-sm"
+                >
+                    <option value="admin">Admin</option>
+                    <option value="koordinator">Koordinatör</option>
+                    <option value="sorumlu">Sorumlu</option>
+                    <option value="izleyici">İzleyici (Sadece Görüntüler)</option>
+                </select>
+                <button
+                    onClick={handleCreate}
+                    className="bg-foreground text-background font-bold text-sm px-4 py-2 rounded-lg hover:opacity-90 transition-opacity"
+                >
+                    Ekle
+                </button>
             </div>
 
-            {/* Users List */}
-            <div className="space-y-3">
-                {users.map(u => (
-                    <div key={u.uid} className="flex items-center justify-between p-4 bg-background border border-border rounded-xl hover:border-primary/30 transition-colors">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                {u.displayName[0].toUpperCase()}
-                            </div>
-                            <div>
-                                <div className="text-sm font-semibold">{u.displayName}</div>
-                                <div className="text-xs text-foreground/40">@{u.username} • {u.role}</div>
-                            </div>
-                        </div>
-                        {u.username !== 'admin' && (
-                            <button
-                                onClick={() => handleDeleteUser(u.uid)}
-                                className="p-2 text-error hover:bg-error-bg rounded-lg transition-colors"
-                            >
-                                <Trash2 size={16} />
-                            </button>
-                        )}
-                    </div>
-                ))}
+            {/* User List */}
+            <div className="border border-border rounded-2xl overflow-hidden bg-card/30">
+                <table className="w-full text-left">
+                    <thead className="bg-foreground/[0.02] border-b border-border">
+                        <tr>
+                            <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-foreground/40">Ad Soyad</th>
+                            <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-foreground/40">Kullanıcı Adı</th>
+                            <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-foreground/40">Rol</th>
+                            <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-foreground/40 text-right">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                        {users.map((u: User) => (
+                            <tr key={u.uid} className="hover:bg-foreground/[0.01] transition-colors">
+                                <td className="px-6 py-4 font-semibold text-sm">{u.displayName}</td>
+                                <td className="px-6 py-4 text-sm text-foreground/60">{u.username}</td>
+                                <td className="px-6 py-4">
+                                    <span className={clsx(
+                                        "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
+                                        u.role === 'admin' ? "bg-primary/10 text-primary" : "bg-foreground/10 text-foreground/60"
+                                    )}>
+                                        {u.role}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                    <button
+                                        onClick={() => handleDelete(u.uid)}
+                                        className="text-error hover:text-error/80 p-2 transition-colors"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
 }
 
-function ProvinceManagementView() {
-    const [tracked, setTracked] = useState<Province[]>([]);
-    const [users, setUsers] = useState<User[]>([]);
+function ProvinceManagement({ users, tracked, setTracked }: any) {
     const [selectedProvince, setSelectedProvince] = useState(PROVINCES_ALL[0]);
 
-    useEffect(() => {
-        setTracked(StorageService.getTrackedProvinces());
-        setUsers(StorageService.getUsers());
-    }, []);
+    const handleAddTracked = async () => {
+        if (tracked.find((p: any) => p.name === selectedProvince)) {
+            alert("Bu il zaten listede!");
+            return;
+        }
 
-    const handleAddTracked = () => {
-        if (tracked.some(p => p.name === selectedProvince)) return;
-        const newTracked: Province = {
-            id: crypto.randomUUID(),
+        const newProvince: Partial<Province> = {
             name: selectedProvince,
-            active: true,
-            updatedAt: Date.now()
+            ilSorumlusuId: "",
+            ilSorumlusuName: "",
+            koordinatorId: "",
+            koordinatorName: "",
+            sorumluId: "",
+            sorumluName: ""
         };
-        StorageService.saveTrackedProvince(newTracked);
-        setTracked([...tracked, newTracked]);
+
+        const created = await FirebaseStorage.addTrackedProvince(newProvince as any);
+        setTracked([...tracked, created]);
     };
 
-    const handleUpdateAssignment = (provinceName: string, field: string, value: string) => {
-        const updated = tracked.map(p => {
+    const handleUpdateAssignment = async (provinceName: string, field: string, value: string) => {
+        const updated = await Promise.all(tracked.map(async (p: any) => {
             if (p.name === provinceName) {
-                const user = users.find(u => u.uid === value);
-                const newData = { ...p, [field]: value, [`${field.replace('Id', 'Name')}`]: user?.displayName || "" };
-                StorageService.saveTrackedProvince(newData);
+                let newData;
+                if (field.endsWith('Id')) {
+                    const user = users.find((u: any) => u.uid === value);
+                    newData = { ...p, [field]: value, [`${field.replace('Id', 'Name')}`]: user?.displayName || "" };
+                } else {
+                    newData = { ...p, [field]: value };
+                    // If manually editing the name, clear the ID link
+                    if (field === 'ilSorumlusuName') {
+                        newData.ilSorumlusuId = "";
+                    }
+                }
+                await FirebaseStorage.saveTrackedProvince(newData);
                 return newData;
             }
             return p;
-        });
+        }));
         setTracked(updated);
     };
 
-    const handleRemove = (name: string) => {
+    const handleRemove = async (name: string) => {
         if (confirm(`${name} ilini takip listesinden çıkarmak istediğinize emin misiniz?`)) {
-            StorageService.removeTrackedProvince(name);
-            setTracked(tracked.filter(p => p.name !== name));
+            await FirebaseStorage.removeTrackedProvince(name);
+            setTracked(tracked.filter((p: any) => p.name !== name));
         }
     };
 
-    const coordinators = users.filter(u => u.role === 'koordinator' || u.role === 'admin');
-    const responsibles = users.filter(u => u.role === 'sorumlu' || u.role === 'admin');
+    const coordinators = users.filter((u: any) => u.role === 'koordinator' || u.role === 'admin');
+    const responsibles = users.filter((u: any) => u.role === 'sorumlu' || u.role === 'admin');
 
     return (
         <div className="space-y-8 animate-fade-in">
@@ -348,7 +277,7 @@ function ProvinceManagementView() {
 
             {/* Tracked List */}
             <div className="space-y-4">
-                {tracked.map(p => (
+                {tracked.map((p: any) => (
                     <div key={p.id} className="p-6 bg-background border border-border rounded-2xl space-y-4 shadow-sm">
                         <div className="flex items-center justify-between border-b border-border pb-4">
                             <h3 className="font-bold text-lg">{p.name}</h3>
@@ -357,14 +286,13 @@ function ProvinceManagementView() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-foreground/50 uppercase">İl Sorumlusu Atama</label>
-                                <select
-                                    value={p.ilSorumlusuId || ""}
-                                    onChange={(e) => handleUpdateAssignment(p.name, 'ilSorumlusuId', e.target.value)}
-                                    className="w-full px-4 py-2 bg-surface/50 border border-border rounded-lg text-sm"
-                                >
-                                    <option value="">Atanmamış</option>
-                                    {users.filter(u => u.role !== 'izleyici').map(u => <option key={u.uid} value={u.uid}>{u.displayName}</option>)}
-                                </select>
+                                <input
+                                    type="text"
+                                    value={p.ilSorumlusuName || ""}
+                                    onChange={(e) => handleUpdateAssignment(p.name, 'ilSorumlusuName', e.target.value)}
+                                    className="w-full px-4 py-2.5 bg-[#f9f9fb] border border-[#e5e5e7] rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-primary transition-all"
+                                    placeholder="Ad Soyad yazınız..."
+                                />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-foreground/50 uppercase">Koordinatör Atama</label>
@@ -374,7 +302,7 @@ function ProvinceManagementView() {
                                     className="w-full px-4 py-2 bg-surface/50 border border-border rounded-lg text-sm"
                                 >
                                     <option value="">Atanmamış</option>
-                                    {coordinators.map(u => <option key={u.uid} value={u.uid}>{u.displayName}</option>)}
+                                    {coordinators.map((u: any) => <option key={u.uid} value={u.uid}>{u.displayName}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
@@ -385,7 +313,7 @@ function ProvinceManagementView() {
                                     className="w-full px-4 py-2 bg-surface/50 border border-border rounded-lg text-sm"
                                 >
                                     <option value="">Atanmamış</option>
-                                    {responsibles.map(u => <option key={u.uid} value={u.uid}>{u.displayName}</option>)}
+                                    {responsibles.map((u: any) => <option key={u.uid} value={u.uid}>{u.displayName}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -394,9 +322,90 @@ function ProvinceManagementView() {
 
                 {tracked.length === 0 && (
                     <div className="text-center py-12 text-foreground/30 border-2 border-dashed border-border rounded-3xl">
-                        Henüz takip edilen il eklenmemiş.
+                        Henüz takibe alınan bir il yok.
                     </div>
                 )}
+            </div>
+        </div>
+    );
+}
+
+function MassReporting() {
+    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState(false);
+
+    const handleTrigger = async () => {
+        if (confirm("Bu işlem tüm takip edilen iller için yeni bir boş kayıt oluşturacaktır. Emin misiniz?")) {
+            setLoading(true);
+            try {
+                await FirebaseStorage.triggerMassReport();
+                setSuccess(true);
+                setTimeout(() => setSuccess(false), 3000);
+            } catch (err) {
+                alert("Hata oluştu");
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
+    return (
+        <div className="space-y-8 animate-fade-in max-w-2xl">
+            <div className="space-y-2">
+                <h2 className="text-2xl font-bold tracking-tight">Rapor İste</h2>
+                <p className="text-sm text-foreground/60">Tek tıkla tüm takip edilen iller için yeni bir değerlendirme süreci başlatın.</p>
+            </div>
+
+            <div className="p-10 border-2 border-dashed border-border rounded-[40px] flex flex-col items-center justify-center text-center space-y-6 bg-card/10">
+                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary group transition-all duration-500 hover:rotate-12">
+                    <ArrowRight size={32} />
+                </div>
+                <div className="space-y-2 max-w-xs">
+                    <h3 className="font-bold text-lg">Yeni Değerlendirme Başlat</h3>
+                    <p className="text-xs text-foreground/40 font-medium">Bu butona tıkladığınızda, takip ettiğiniz her il için otomatik olarak &quot;Görüşülmedi&quot; statüsünde yeni bir satır açılacaktır.</p>
+                </div>
+                <button
+                    disabled={loading}
+                    onClick={handleTrigger}
+                    className={clsx(
+                        "w-full px-8 py-4 rounded-full font-black text-sm transition-all duration-300 flex items-center justify-center gap-2",
+                        success
+                            ? "bg-success text-white"
+                            : "bg-foreground text-background hover:scale-105 active:scale-95 shadow-xl shadow-foreground/10"
+                    )}
+                >
+                    {loading ? "Hazırlanıyor..." : success ? <><CheckCircle2 size={18} /> Rapor Talepleri Gönderildi</> : "Süreçleri Başlat"}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function AnalysisView() {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <div className="space-y-2">
+                <h2 className="text-2xl font-bold tracking-tight">Genel Analiz</h2>
+                <p className="text-sm text-foreground/60">Sistem genelindeki istatistikleri ve performans verilerini inceleyin.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="p-8 border border-border rounded-[32px] bg-card/30 backdrop-blur-md space-y-6">
+                    <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
+                        <LayoutGrid size={24} />
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-3xl font-black tracking-tight">24</p>
+                        <p className="text-xs font-bold text-foreground/40 uppercase tracking-widest">Takip Edilen İl</p>
+                    </div>
+                </div>
+                {/* Gelecekte eklenecek analiz grafik kapakları */}
+                <div className="p-8 border-2 border-dashed border-border rounded-[32px] flex items-center justify-center text-foreground/20 italic font-medium">
+                    Analiz Grafikleri (Yakında)
+                </div>
+                <div className="p-8 border-2 border-dashed border-border rounded-[32px] flex items-center justify-center text-foreground/20 italic font-medium">
+                    Performans Verileri (Yakında)
+                </div>
             </div>
         </div>
     );
