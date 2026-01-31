@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from "next/navigation";
 import { useAuth } from './context/AuthContext';
 import { StorageService } from './services/storage';
-import { Entry, EntryStatus } from './types';
+import { Entry, EntryStatus, User } from './types';
 import Modal from './components/Modal';
 import EntryForm from './components/EntryForm';
 
@@ -34,6 +34,7 @@ export default function Dashboard() {
   const { user, login, logout, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
@@ -63,6 +64,7 @@ export default function Dashboard() {
     setLoading(true);
     setTimeout(() => {
       setEntries(StorageService.getEntries());
+      setUsers(StorageService.getUsers());
       setLoading(false);
     }, 300);
   };
@@ -160,38 +162,37 @@ export default function Dashboard() {
           </div>
 
           <div className="space-y-3">
-            <button
-              onClick={() => login('admin')}
-              className="w-full flex items-center gap-4 px-6 py-4 bg-card hover:bg-hover border border-border rounded-2xl transition-all duration-200 group"
-            >
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">A</div>
-              <div className="text-left flex-1">
-                <div className="font-semibold text-foreground group-hover:text-primary transition-colors">Admin</div>
-                <div className="text-xs text-foreground/50">Tam yetkili yönetim</div>
-              </div>
-            </button>
+            {users.map((u) => {
+              const roleColors: Record<string, string> = {
+                admin: "text-primary bg-primary/10",
+                koordinator: "text-indigo-500 bg-indigo-500/10",
+                sorumlu: "text-success bg-success/10",
+                viewer: "text-foreground/40 bg-surface",
+              };
 
-            <button
-              onClick={() => login('hasan')}
-              className="w-full flex items-center gap-4 px-6 py-4 bg-card hover:bg-hover border border-border rounded-2xl transition-all duration-200 group"
-            >
-              <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold text-lg">K</div>
-              <div className="text-left flex-1">
-                <div className="font-semibold text-foreground group-hover:text-indigo-500 transition-colors">Koordinatör</div>
-                <div className="text-xs text-foreground/50">Hasan - Kısıtlı yetki</div>
-              </div>
-            </button>
+              const roleLabels: Record<string, string> = {
+                admin: "Tam yetkili yönetim",
+                koordinator: "Koordinasyon yönetimi",
+                sorumlu: "İl not girişi",
+                viewer: "Sadece görüntüleme",
+              };
 
-            <button
-              onClick={() => login('berat')}
-              className="w-full flex items-center gap-4 px-6 py-4 bg-card hover:bg-hover border border-border rounded-2xl transition-all duration-200 group"
-            >
-              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center text-success font-bold text-lg">S</div>
-              <div className="text-left flex-1">
-                <div className="font-semibold text-foreground group-hover:text-success transition-colors">Sorumlu</div>
-                <div className="text-xs text-foreground/50">Berat - Not girişi</div>
-              </div>
-            </button>
+              return (
+                <button
+                  key={u.uid}
+                  onClick={() => login(u.username)}
+                  className="w-full flex items-center gap-4 px-6 py-4 bg-card hover:bg-hover border border-border rounded-2xl transition-all duration-200 group active:scale-[0.98]"
+                >
+                  <div className={clsx("w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg", roleColors[u.role] || roleColors.viewer)}>
+                    {u.displayName[0].toUpperCase()}
+                  </div>
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-foreground group-hover:text-primary transition-colors">{u.displayName}</div>
+                    <div className="text-xs text-foreground/50">{roleLabels[u.role]}</div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
