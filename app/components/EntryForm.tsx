@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect } from 'react';
 import { Entry, EntryStatus, User } from "../types";
 import { FirebaseStorage } from '../services/firebaseStorage';
