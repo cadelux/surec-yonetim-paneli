@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Users, MapPin, ClipboardList, Plus, Trash2, Save, Send, LayoutGrid } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { StorageService } from "../services/storage";
 import { FirebaseStorage } from "../services/firebaseStorage";
 import { User, Province, UserRole, Entry, PROVINCES_ALL } from "../types";
 import clsx from "clsx";
@@ -151,7 +150,7 @@ export default function AdminPage() {
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-text-secondary">
-                                                        {u.managedProvinces.join(', ') || '-'}
+                                                        {u.managedProvinces?.join(', ') || '-'}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm">
                                                         <div className="flex gap-3">
@@ -237,7 +236,7 @@ function StatsCard({ title, value, icon }: { title: string, value: number, icon:
         <div className="bg-white dark:bg-white/5 p-6 rounded-2xl border border-gray-200 dark:border-white/10 transition-transform hover:scale-[1.02]">
             <div className="flex justify-between items-start mb-4">
                 <div className="p-3 bg-brand-primary/10 dark:bg-brand-primary/20 rounded-xl text-brand-primary">
-                    {React.cloneElement(icon as React.ReactElement, { className: "w-6 h-6" })}
+                    {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { className: "w-6 h-6" }) : icon}
                 </div>
             </div>
             <div className="text-2xl font-bold mb-1">{value}</div>
