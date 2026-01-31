@@ -105,7 +105,7 @@ export default function Dashboard() {
       StorageService.updateEntry(editingEntry.id, data);
     } else {
       const newEntry: Entry = {
-        id: crypto.randomUUID(),
+        id: StorageService.generateId(),
         createdAt: Date.now(),
         provinceName: data.provinceName || 'Bilinmiyor',
         ilSorumlusuName: data.ilSorumlusuName || '',
@@ -235,9 +235,11 @@ export default function Dashboard() {
               }
             </button>
 
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-medium text-foreground">{user.displayName}</span>
-              <span className="text-xs text-foreground/50 capitalize">{user.role}</span>
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-medium text-foreground">{user.displayName}</span>
+                <span className="text-xs text-foreground/50 capitalize">{user.role}</span>
+              </div>
             </div>
 
             <button

@@ -1,5 +1,13 @@
 import { Entry, Province, User } from "../types";
 
+// Helper for generating IDs safely
+export const generateId = () => {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+        return window.crypto.randomUUID();
+    }
+    return Math.random().toString(36).substring(2, 11);
+};
+
 // Mock Data to initialize LocalStorage if empty
 const MOCK_USERS: User[] = [
     { uid: 'u1', username: 'admin', displayName: 'Yönetici', role: 'admin', active: true, createdAt: Date.now() },
@@ -58,6 +66,7 @@ const STORAGE_KEYS = {
 };
 
 export const StorageService = {
+    generateId,
     // --- USERS ---
     getUsers: (): User[] => {
         if (typeof window === 'undefined') return MOCK_USERS;
@@ -77,7 +86,14 @@ export const StorageService = {
             localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(MOCK_ENTRIES));
             return MOCK_ENTRIES;
         }
-        return JSON.parse(data);
+        try {
+            const parsed = JSON.parse(data) as Entry[];
+            // Always sort by createdAt desc
+            return parsed.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        } catch (e) {
+            console.error("Data parse error", e);
+            return MOCK_ENTRIES;
+        }
     },
 
     updateEntry: (id: string, updates: Partial<Entry>) => {
@@ -156,7 +172,7 @@ export const StorageService = {
     triggerMassReport: (dateRange: string) => {
         const trackedProvinces = StorageService.getTrackedProvinces();
         const newEntries: Entry[] = trackedProvinces.map(p => ({
-            id: crypto.randomUUID(),
+            id: generateId(),
             provinceName: p.name,
             ilSorumlusuName: p.ilSorumlusuName || "",
             koordinatorName: p.koordinatorName || "",
