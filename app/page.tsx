@@ -45,6 +45,14 @@ export default function Dashboard() {
   // Search State
   const [searchInput, setSearchInput] = useState("");
 
+  // Statistics
+  const stats = {
+    total: entries.length,
+    completed: entries.filter(e => e.status === 'Görüşüldü').length,
+    pending: entries.filter(e => e.status === 'Görüşülmedi').length,
+    followUp: entries.filter(e => e.status === 'Tekrar Görüşülecek').length
+  };
+
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
     if (savedTheme) {
@@ -111,8 +119,8 @@ export default function Dashboard() {
         ilSorumlusuName: data.ilSorumlusuName || '',
         koordinatorName: data.koordinatorName || '',
         sorumluName: data.sorumluName || '',
-        koordinatorId: 'u99',
-        sorumluId: 'u3',
+        koordinatorId: data.koordinatorId || '',
+        sorumluId: data.sorumluId || '',
         status: data.status as EntryStatus || 'Görüşülmedi',
         meetingDate: data.meetingDate || '',
         notes: data.notes || '',
@@ -167,14 +175,14 @@ export default function Dashboard() {
                 admin: "text-primary bg-primary/10",
                 koordinator: "text-indigo-500 bg-indigo-500/10",
                 sorumlu: "text-success bg-success/10",
-                viewer: "text-foreground/40 bg-surface",
+                izleyici: "text-foreground/40 bg-surface",
               };
 
               const roleLabels: Record<string, string> = {
                 admin: "Tam yetkili yönetim",
                 koordinator: "Koordinasyon yönetimi",
                 sorumlu: "İl not girişi",
-                viewer: "Sadece görüntüleme",
+                izleyici: "Sadece görüntüleme",
               };
 
               return (
@@ -183,12 +191,12 @@ export default function Dashboard() {
                   onClick={() => login(u.username)}
                   className="w-full flex items-center gap-4 px-6 py-4 bg-card hover:bg-hover border border-border rounded-2xl transition-all duration-200 group active:scale-[0.98]"
                 >
-                  <div className={clsx("w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg", roleColors[u.role] || roleColors.viewer)}>
+                  <div className={clsx("w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg", roleColors[u.role] || roleColors.izleyici)}>
                     {u.displayName[0].toUpperCase()}
                   </div>
                   <div className="text-left flex-1">
                     <div className="font-semibold text-foreground group-hover:text-primary transition-colors">{u.displayName}</div>
-                    <div className="text-xs text-foreground/50">{roleLabels[u.role]}</div>
+                    <div className="text-xs text-foreground/50">{roleLabels[u.role] || "Kullanıcı"}</div>
                   </div>
                 </button>
               );
@@ -253,6 +261,14 @@ export default function Dashboard() {
       </header>
 
       <main className="max-w-[1400px] mx-auto px-6 py-8">
+        {/* Statistics Widgets */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <StatCard label="Toplam Kayıt" value={stats.total} icon={<LayoutGrid size={18} />} color="blue" />
+          <StatCard label="Görüşüldü" value={stats.completed} icon={<div className="w-2 h-2 rounded-full bg-success" />} color="green" />
+          <StatCard label="Görüşülmedi" value={stats.pending} icon={<div className="w-2 h-2 rounded-full bg-error" />} color="red" />
+          <StatCard label="Tekrar Görüşülecek" value={stats.followUp} icon={<div className="w-2 h-2 rounded-full bg-info" />} color="orange" />
+        </div>
+
         {/* Controls */}
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-2">
@@ -442,6 +458,27 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon, color }: { label: string, value: number, icon: React.ReactNode, color: 'blue' | 'green' | 'red' | 'orange' }) {
+  const colors = {
+    blue: "text-blue-500 bg-blue-500/10",
+    green: "text-success bg-success-bg",
+    red: "text-error bg-error-bg",
+    orange: "text-info bg-info-bg",
+  };
+
+  return (
+    <div className="bg-card border border-border p-5 rounded-[24px] shadow-sm hover:shadow-md transition-all duration-300">
+      <div className="flex items-center justify-between mb-3">
+        <div className={clsx("p-2 rounded-xl", colors[color])}>
+          {icon}
+        </div>
+        <span className="text-2xl font-bold tracking-tight">{value}</span>
+      </div>
+      <p className="text-xs font-semibold text-foreground/50 uppercase tracking-wider">{label}</p>
     </div>
   );
 }

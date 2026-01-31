@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Entry, EntryStatus, User } from "../types";
-
-const PROVINCES = ["İSTANBUL", "ANKARA", "BURSA", "KOCAELİ", "İZMİR", "KONYA", "ANTALYA"];
+import { StorageService } from '../services/storage';
 
 interface EntryFormProps {
     initialData?: Entry | null;
@@ -11,6 +10,7 @@ interface EntryFormProps {
 }
 
 export default function EntryForm({ initialData, currentUser, onSubmit, onCancel }: EntryFormProps) {
+    const [trackedProvinces, setTrackedProvinces] = useState<any[]>([]);
     const [formData, setFormData] = useState<Partial<Entry>>({
         provinceName: "",
         ilSorumlusuName: "",
@@ -22,10 +22,31 @@ export default function EntryForm({ initialData, currentUser, onSubmit, onCancel
     });
 
     useEffect(() => {
+        setTrackedProvinces(StorageService.getTrackedProvinces());
         if (initialData) {
             setFormData(initialData);
         }
     }, [initialData]);
+
+    const handleProvinceChange = (name: string) => {
+        if (!name) return;
+        
+        // Find if this province is tracked to auto-fill defaults if it's a new entry
+        const tracked = trackedProvinces.find(p => p.name === name);
+        if (tracked && !initialData) {
+            setFormData({
+                ...formData,
+                provinceName: name,
+                ilSorumlusuName: tracked.ilSorumlusuName || "",
+                koordinatorName: tracked.koordinatorName || "",
+                sorumluName: tracked.sorumluName || "",
+                koordinatorId: tracked.koordinatorId || "",
+                sorumluId: tracked.sorumluId || ""
+            });
+        } else {
+            setFormData({ ...formData, provinceName: name });
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -54,11 +75,15 @@ export default function EntryForm({ initialData, currentUser, onSubmit, onCancel
                     <select
                         disabled={isStructureReadOnly}
                         value={formData.provinceName}
-                        onChange={(e) => setFormData({ ...formData, provinceName: e.target.value })}
+                        onChange={(e) => handleProvinceChange(e.target.value)}
                         className="w-full px-4 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <option value="">Seçiniz</option>
-                        {PROVINCES.map(p => <option key={p} value={p}>{p}</option>)}
+                        <option value="">İl Seçiniz</option>
+                        {trackedProvinces.length > 0 ? (
+                            trackedProvinces.map(p => <option key={p.id} value={p.name}>{p.name}</option>)
+                        ) : (
+                            <option disabled>Henüz takip edilen il yok</option>
+                        )}
                     </select>
                 </div>
 
