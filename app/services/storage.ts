@@ -53,6 +53,7 @@ const STORAGE_KEYS = {
     USERS: 'app_users',
     ENTRIES: 'app_entries',
     PROVINCES: 'app_provinces',
+    TRACKED_PROVINCES: 'app_tracked_provinces',
     CURRENT_USER: 'app_current_user'
 };
 
@@ -106,13 +107,72 @@ export const StorageService = {
     // --- AUTH SIMULATION ---
     login: (username: string): User | null => {
         const users = StorageService.getUsers();
-        // Simple mock login by username
         const user = users.find(u => u.username === username);
         if (user) {
             localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
             return user;
         }
         return null;
+    },
+
+    createUser: (user: User) => {
+        const users = StorageService.getUsers();
+        users.push(user);
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+        return user;
+    },
+
+    deleteUser: (uid: string) => {
+        let users = StorageService.getUsers();
+        users = users.filter(u => u.uid !== uid);
+        localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+    },
+
+    // --- TRACKED PROVINCES ---
+    getTrackedProvinces: (): Province[] => {
+        if (typeof window === 'undefined') return [];
+        const data = localStorage.getItem(STORAGE_KEYS.TRACKED_PROVINCES);
+        return data ? JSON.parse(data) : [];
+    },
+
+    saveTrackedProvince: (province: Province) => {
+        const provinces = StorageService.getTrackedProvinces();
+        const index = provinces.findIndex(p => p.name === province.name);
+        if (index !== -1) {
+            provinces[index] = province;
+        } else {
+            provinces.push(province);
+        }
+        localStorage.setItem(STORAGE_KEYS.TRACKED_PROVINCES, JSON.stringify(provinces));
+    },
+
+    removeTrackedProvince: (provinceName: string) => {
+        let provinces = StorageService.getTrackedProvinces();
+        provinces = provinces.filter(p => p.name !== provinceName);
+        localStorage.setItem(STORAGE_KEYS.TRACKED_PROVINCES, JSON.stringify(provinces));
+    },
+
+    // --- MASS REPORT (RAPOR İSTE) ---
+    triggerMassReport: (dateRange: string) => {
+        const trackedProvinces = StorageService.getTrackedProvinces();
+        const newEntries: Entry[] = trackedProvinces.map(p => ({
+            id: crypto.randomUUID(),
+            provinceName: p.name,
+            ilSorumlusuName: p.ilSorumlusuName || "",
+            koordinatorName: p.koordinatorName || "",
+            sorumluName: p.sorumluName || "",
+            koordinatorId: p.koordinatorId || "",
+            sorumluId: p.sorumluId || "",
+            status: "Görüşülmedi",
+            meetingDate: dateRange,
+            notes: "",
+            createdAt: Date.now()
+        }));
+
+        const existingEntries = StorageService.getEntries();
+        const updatedEntries = [...newEntries, ...existingEntries];
+        localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(updatedEntries));
+        return newEntries.length;
     },
 
     getCurrentUser: (): User | null => {

@@ -1,8 +1,8 @@
 "use client";
-import { Search, Plus, MoreVertical, LayoutGrid, Map, Calendar, Trash2, Sun, Moon } from "lucide-react";
+import { Search, Plus, MoreVertical, LayoutGrid, Map, Calendar, Trash2, Sun, Moon, Settings } from "lucide-react";
 import clsx from "clsx";
 import React, { useEffect, useState } from 'react';
-
+import { useRouter } from "next/navigation";
 import { useAuth } from './context/AuthContext';
 import { StorageService } from './services/storage';
 import { Entry, EntryStatus } from './types';
@@ -32,6 +32,7 @@ function Badge({ status }: { status: string }) {
 
 export default function Dashboard() {
   const { user, login, logout, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -288,7 +289,11 @@ export default function Dashboard() {
                   Yeni Kayıt
                 </button>
 
-                <button className="px-5 py-2 bg-card hover:bg-hover text-foreground rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap">
+                <button
+                  onClick={() => router.push('/admin')}
+                  className="px-5 py-2 bg-card hover:bg-hover text-foreground border border-border rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2"
+                >
+                  <Settings size={14} />
                   Admin Paneli
                 </button>
               </>
