@@ -1,18 +1,18 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '../types';
-import { StorageService } from '../services/storage';
+import { FirebaseStorage } from '../services/firebaseStorage';
 
 interface AuthContextType {
     user: User | null;
-    login: (username: string) => void;
+    login: (username: string, password: string) => Promise<void>;
     logout: () => void;
     isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
     user: null,
-    login: () => { },
+    login: async (u: string, p: string) => { },
     logout: () => { },
     isLoading: true,
 });
@@ -24,25 +24,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // Check for existing session
-        const currentUser = StorageService.getCurrentUser();
-        if (currentUser) {
-            setUser(currentUser);
+        const currentUserData = localStorage.getItem('app_current_user');
+        if (currentUserData) {
+            setUser(JSON.parse(currentUserData));
         }
         setIsLoading(false);
     }, []);
 
-    const login = (username: string) => {
-        const foundUser = StorageService.login(username);
+    const login = async (username: string, password: string) => {
+        const users = await FirebaseStorage.getUsers();
+        const foundUser = users.find(u =>
+            u.username === username.toLowerCase().trim() &&
+            (u.password === password || (!u.password && password === "123456"))
+        );
         if (foundUser) {
             setUser(foundUser);
+            localStorage.setItem('app_current_user', JSON.stringify(foundUser));
         } else {
-            alert("Kullanıcı bulunamadı (Mock: 'admin', 'hasan', 'berat' deneyin)");
+            throw new Error("Kullanıcı adı veya şifre hatalı.");
         }
     };
 
     const logout = () => {
-        StorageService.logout();
+        localStorage.removeItem('app_current_user');
         setUser(null);
     };
 
