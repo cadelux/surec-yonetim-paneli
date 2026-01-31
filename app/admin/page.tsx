@@ -233,7 +233,7 @@ function UserManagementView() {
                         <option value="admin">Admin</option>
                         <option value="koordinator">Koordinatör</option>
                         <option value="sorumlu">Sorumlu</option>
-                        <option value="viewer">İzleyici</option>
+                        <option value="izleyici">İzleyici</option>
                     </select>
                 </div>
                 <div className="flex items-end">
@@ -349,12 +349,23 @@ function ProvinceManagementView() {
             {/* Tracked List */}
             <div className="space-y-4">
                 {tracked.map(p => (
-                    <div key={p.id} className="p-6 bg-background border border-border rounded-2xl space-y-4">
+                    <div key={p.id} className="p-6 bg-background border border-border rounded-2xl space-y-4 shadow-sm">
                         <div className="flex items-center justify-between border-b border-border pb-4">
                             <h3 className="font-bold text-lg">{p.name}</h3>
                             <button onClick={() => handleRemove(p.name)} className="text-error text-xs font-semibold hover:underline">Takibi Bırak</button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold text-foreground/50 uppercase">İl Sorumlusu Atama</label>
+                                <select
+                                    value={p.ilSorumlusuId || ""}
+                                    onChange={(e) => handleUpdateAssignment(p.name, 'ilSorumlusuId', e.target.value)}
+                                    className="w-full px-4 py-2 bg-surface/50 border border-border rounded-lg text-sm"
+                                >
+                                    <option value="">Atanmamış</option>
+                                    {users.filter(u => u.role !== 'izleyici').map(u => <option key={u.uid} value={u.uid}>{u.displayName}</option>)}
+                                </select>
+                            </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-bold text-foreground/50 uppercase">Koordinatör Atama</label>
                                 <select
