@@ -24,6 +24,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        // Check for existing session in localStorage for now
+        // (Will move to Firebase Auth persistence later)
         const currentUserData = localStorage.getItem('app_current_user');
         if (currentUserData) {
             setUser(JSON.parse(currentUserData));
@@ -33,10 +35,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const login = async (username: string, password: string) => {
         const users = await FirebaseStorage.getUsers();
+        // Matching username (case insensitive) AND password
+        // Backwards compatibility: If user doesn't have a password yet, allow '123456'
         const foundUser = users.find(u =>
             u.username === username.toLowerCase().trim() &&
             (u.password === password || (!u.password && password === "123456"))
         );
+
         if (foundUser) {
             setUser(foundUser);
             localStorage.setItem('app_current_user', JSON.stringify(foundUser));

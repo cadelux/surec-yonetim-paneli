@@ -1,45 +1,65 @@
-export type UserRole = 'admin' | 'user';
+export type UserRole = 'admin' | 'koordinator' | 'sorumlu' | 'izleyici';
 
 export interface User {
-    id: string;
+    uid: string;
     username: string;
-    password?: string;
+    displayName: string;
     role: UserRole;
-    managedProvinces: string[];
-    createdAt: string;
+    active: boolean;
+    createdAt: number; // timestamp
+    password?: string;
+}
+
+export interface Province {
+    id: string; // generated
+    name: string; // e.g. "İstanbul"
+    active: boolean;
+
+    ilSorumlusuId?: string;
+    ilSorumlusuName?: string;
+
+    koordinatorId?: string;
+    koordinatorName?: string;
+
+    sorumluId?: string;
+    sorumluName?: string;
+
+    updatedAt: number;
 }
 
 export type EntryStatus = 'Görüşüldü' | 'Görüşülmedi' | 'Tekrar Görüşülecek';
 
 export interface Entry {
-    id: string;
-    province: string;
-    district: string;
-    managerName: string;
-    managerPhone: string;
-    status: EntryStatus;
+    id: string; // generated
+    provinceName: string; // Denormalized for easy display
+
+    ilSorumlusuName: string;
+    koordinatorName: string;
+    sorumluName: string;
+
+    koordinatorId: string; // For permission checks
+    sorumluId: string;     // For permission checks
+
+    meetingDate: string; // Display text like "8 Ocak - 10 Ocak"
     notes: string;
-    date: string;
-    createdBy: string;
-    managerTitle?: string;
-    history?: Entry[];
+    status: EntryStatus;
+
+    createdAt: number;
 }
 
-export interface Province {
+export interface Notebook {
     id: string;
-    name: string;
-    isActive: boolean;
+    title: string;
+    createdAt: number;
+    updatedAt: number;
+    createdBy: string;
 }
 
-export const PROVINCES_ALL = [
-    "Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Amasya", "Ankara", "Antalya", "Artvin",
-    "Aydın", "Balıkesir", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa",
-    "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Edirne", "Elazığ", "Erzincan",
-    "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkari", "Hatay", "Isparta",
-    "Mersin", "İstanbul", "İzmir", "Kars", "Kastamonu", "Kayseri", "Kırklareli", "Kırşehir",
-    "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Kahramanmaraş", "Mardin", "Muğla",
-    "Muş", "Nevşehir", "Niğde", "Ordu", "Rize", "Sakarya", "Samsun", "Siirt",
-    "Sinop", "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Şanlıurfa", "Uşak",
-    "Van", "Yozgat", "Zonguldak", "Aksaray", "Bayburt", "Karaman", "Kırıkkale", "Batman",
-    "Şırnak", "Bartın", "Ardahan", "Iğdır", "Yalova", "Karabük", "Kilis", "Osmaniye", "Düzce"
-];
+export interface Note {
+    id: string;
+    notebookId: string;
+    title: string;
+    content: string;
+    createdAt: number;
+    updatedAt: number;
+}
