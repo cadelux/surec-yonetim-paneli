@@ -219,6 +219,31 @@ html {
   }
 }
 
+@keyframes checkbox-pop {
+  0% {
+    transform: scale(0.8);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes check-draw {
+  0% {
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+  }
+
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
 .animate-pulse-subtle {
   animation: pulse-subtle 2s infinite ease-in-out;
 }
@@ -237,6 +262,10 @@ html {
 
 .animate-slide-right {
   animation: slide-right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-checkbox {
+  animation: checkbox-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Button click effect */
@@ -475,4 +504,41 @@ textarea::placeholder {
   background-color: #f5f5f7;
   border-color: #d2d2d7;
   color: #86868b;
+}
+
+/* --- FORCED VISIBILITY CLASSES --- */
+.force-text-visible {
+  color: #000000 !important;
+}
+
+.dark .force-text-visible {
+  color: #ffffff !important;
+}
+
+.force-text-subtle {
+  color: #333333 !important;
+}
+
+.dark .force-text-subtle {
+  color: #cccccc !important;
+}
+
+/* Force black text for completed tasks in light mode */
+:root:not(.dark) .task-completed-text {
+  color: #000000 !important;
+  text-decoration-color: #000000 !important;
+}
+
+.dark .task-completed-text {
+  color: #ffffff !important;
+  text-decoration-color: #ffffff !important;
+}
+
+/* --- FEEDBACK TEXT OVERRIDES --- */
+.feedback-content-text {
+  color: #000000 !important;
+}
+
+:is(.dark) .feedback-content-text {
+  color: #ffffff !important;
 }

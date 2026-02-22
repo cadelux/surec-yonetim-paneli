@@ -8,6 +8,12 @@ export interface User {
     active: boolean;
     createdAt: number; // timestamp
     password?: string;
+    unit?: string; // e.g. "Teşkilat", "Eğitim", "Mali", "Sosyal Medya"
+}
+
+export interface Unit {
+    id: string;
+    name: string;
 }
 
 export interface Province {
@@ -45,6 +51,21 @@ export interface Entry {
     status: EntryStatus;
 
     createdAt: number;
+
+    // 1. Sorumlu Aksiyonları
+    koordinatorArandi?: boolean;       // Sorumlu: "Koordinatörle görüştüm" tiki.
+    koordinatorArandiTarihi?: number | null;  // Sorumlu: Tiki ne zaman attı?
+    sorumluGorus?: string;            // Sorumlu: Kayıtla ilgili fikir/planı.
+    sorumluGorusTarihi?: number;      // Sorumlu görüşünün girildiği tarih.
+
+    // 2. Admin Aksiyonları
+    genelSorumluOkundu?: boolean;      // Admin: "Okudum/Gördüm" tiki. En sağda.
+    genelSorumluOkunduTarihi?: number | null; // Admin: Ne zaman okudu?
+
+    // 3. Admin - Sorumlu İletişimi
+    adminOnay?: boolean;               // Admin: Sorumlunun görüşünü onayladı mı?
+    adminYorum?: string;              // Admin: Sorumluya özel cevap/yorum.
+    adminYorumTarihi?: number;        // Admin yorumunun tarihi.
 }
 
 export interface Notebook {
@@ -62,4 +83,49 @@ export interface Note {
     content: string;
     createdAt: number;
     updatedAt: number;
+}
+
+export interface TrainingSlide {
+    id: string;
+    title: string;
+    type: 'text' | 'video' | 'quiz';
+    content: string; // HTML string
+    mediaUrl?: string;
+    duration?: string;
+}
+
+export interface Training {
+    id: string;
+    title: string;
+    category: string;
+    description: string;
+    pageUrl: string;
+    createdAt: number;
+    createdBy: string;
+    slides?: TrainingSlide[]; // New field for rich content
+}
+
+export interface Enrollment {
+    id: string; // generated
+    userId: string;
+    trainingId: string;
+    status: 'active' | 'completed';
+    enrolledAt: number;
+    completedAt?: number;
+}
+
+export interface Task {
+    id: string; // generated
+    assignedToUnit?: string; // e.g. "Eğitim Birimi" (Optional now, as user assignment is primary)
+    assignedToUserId?: string; // specific user
+    assignedBy: string; // User ID
+    senderName: string; // Display name of sender
+    senderRole: string; // Role of sender
+    title: string;
+    description: string;
+    status: 'pending' | 'completed';
+    completionNote?: string;
+    createdAt: number;
+    completedAt?: number;
+    readAt?: number; // timestamp when read
 }
