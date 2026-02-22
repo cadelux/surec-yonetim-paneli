@@ -1,19 +1,20 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, MapPin, ClipboardList, Plus, Trash2, Save, Send, LayoutGrid, Book, Sparkles, Calendar } from "lucide-react";
+import { ArrowLeft, Users, MapPin, ClipboardList, Plus, Trash2, Save, Send, LayoutGrid, Book, Sparkles, Calendar, MessageCircle, CheckSquare, Square, Eye, EyeOff, Key, Building, GraduationCap } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { StorageService } from "../services/storage";
 import { FirebaseStorage } from "../services/firebaseStorage";
-import { User, Province, UserRole, Entry, Notebook, Note } from "../types";
+import { User, Province, UserRole, Entry, Notebook, Note, Unit, Training } from "../types";
 import clsx from "clsx";
+import { UnitManagementView, UnitSelector } from "./UnitComponents";
 
-const PROVINCES_ALL = ["ADANA", "ADIYAMAN", "AFYONKARAHİSAR", "AĞRI", "AKSARAY", "AMASYA", "ANKARA", "ANTALYA", "ARDAHAN", "ARTVİN", "AYDIN", "BALIKESİR", "BARTIN", "BATMAN", "BAYBURT", "BİLECİK", "BİNGÖL", "BİTLİS", "BOLU", "BURDUR", "BURSA", "ÇANAKKALE", "ÇANKIRI", "ÇORUM", "DENİZLİ", "DİYARBAKIR", "DÜZCE", "EDİRNE", "ELAZIĞ", "ERZİNCAN", "ERZURUM", "ESKİŞEHİR", "GAZİANTEP", "GİRESUN", "GÜMÜŞHANE", "HAKKARİ", "HATAY", "IĞDIR", "ISPARTA", "İSTANBUL", "İZMİR", "KAHRAMANMARAŞ", "KARABÜK", "KARAMAN", "KARS", "KASTAMONU", "KAYSERİ", "KIRIKKALE", "KIRKLARELİ", "KIRŞEHİR", "KİLİS", "KOCAELİ", "KONYA", "KÜTAHYA", "MALATYA", "MANİSA", "MARDİN", "MERSİN", "MUĞLA", "MUŞ", "NEVŞEHİR", "NİĞDE", "ORDU", "OSMANİYE", "RİZE", "SAKARYA", "SAMSUN", "SİİRT", "SİNOP", "SİVAS", "ŞANLIURFA", "ŞIRNAK", "TEKİRDAĞ", "TOKAT", "TRABZON", "TUNCELİ", "UŞAK", "VAN", "YALOVA", "YOZGAT", "ZONGULDAK"];
+const PROVINCES_ALL = ["ADANA", "ADIYAMAN", "AFYONKARAHİSAR", "AĞRI", "AKSARAY", "AMASYA", "ANKARA", "ANTALYA", "ARDAHAN", "ARTVİN", "AYDIN", "BALIKESİR", "BARTIN", "BATMAN", "BAYBURT", "BİLECİK", "BİNGÖL", "BİTLİS", "BOLU", "BURDUR", "BURSA (DOĞU)", "BURSA (BATI)", "ÇANAKKALE", "ÇANKIRI", "ÇORUM", "DENİZLİ", "DİYARBAKIR", "DÜZCE", "EDİRNE", "ELAZIĞ", "ERZİNCAN", "ERZURUM", "ESKİŞEHİR", "GAZİANTEP", "GİRESUN", "GÜMÜŞHANE", "HAKKARİ", "HATAY", "IĞDIR", "ISPARTA", "İSTANBUL (AVRUPA)", "İSTANBUL (ANADOLU)", "İZMİR", "KAHRAMANMARAŞ", "KARABÜK", "KARAMAN", "KARS", "KASTAMONU", "KAYSERİ", "KIRIKKALE", "KIRKLARELİ", "KIRŞEHİR", "KİLİS", "KOCAELİ", "KONYA", "KÜTAHYA", "MALATYA", "MANİSA", "MARDİN", "MERSİN", "MUĞLA", "MUŞ", "NEVŞEHİR", "NİĞDE", "ORDU", "OSMANİYE", "RİZE", "SAKARYA", "SAMSUN", "SİİRT", "SİNOP", "SİVAS", "ŞANLIURFA", "ŞIRNAK", "TEKİRDAĞ", "TOKAT", "TRABZON", "TUNCELİ", "UŞAK", "VAN", "YALOVA", "YOZGAT", "ZONGULDAK"];
 
 export default function AdminPage() {
     const { user } = useAuth();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'users' | 'provinces' | 'reports' | 'analysis' | 'notes'>('analysis');
+    const [activeTab, setActiveTab] = useState<'users' | 'provinces' | 'reports' | 'analysis' | 'notes' | 'feedback' | 'units' | 'education'>('analysis');
 
     // Security Check
     useEffect(() => {
@@ -73,10 +74,28 @@ export default function AdminPage() {
                             label="Takip Edilen İller"
                         />
                         <TabButton
+                            active={activeTab === 'units'}
+                            onClick={() => setActiveTab('units')}
+                            icon={<Building size={18} />}
+                            label="Birim Yönetimi"
+                        />
+                        <TabButton
+                            active={activeTab === 'education'}
+                            onClick={() => setActiveTab('education')}
+                            icon={<GraduationCap size={18} />}
+                            label="Eğitim Yönetimi"
+                        />
+                        <TabButton
                             active={activeTab === 'notes'}
                             onClick={() => setActiveTab('notes')}
                             icon={<Book size={18} />}
                             label="Notlar"
+                        />
+                        <TabButton
+                            active={activeTab === 'feedback'}
+                            onClick={() => setActiveTab('feedback')}
+                            icon={<MessageCircle size={18} />}
+                            label="Geri Bildirimler"
                         />
                     </div>
 
@@ -85,8 +104,11 @@ export default function AdminPage() {
                         {activeTab === 'analysis' && <AnalysisView />}
                         {activeTab === 'reports' && <MassReportView />}
                         {activeTab === 'users' && <UserManagementView />}
+                        {activeTab === 'education' && <EducationManagementView />}
                         {activeTab === 'provinces' && <ProvinceManagementView />}
+                        {activeTab === 'units' && <UnitManagementView />}
                         {activeTab === 'notes' && <NotesManagementView />}
+                        {activeTab === 'feedback' && <FeedbackManagementView />}
                     </div>
                 </div>
             </main>
@@ -181,12 +203,29 @@ function UserManagementView() {
     const [newUserName, setNewUserName] = useState("");
     const [newUserUsername, setNewUserUsername] = useState("");
     const [newUserRole, setNewUserRole] = useState<UserRole>('sorumlu');
+    const [newUserUnit, setNewUserUnit] = useState("");
     const [lastCreated, setLastCreated] = useState<{ username: string, pass: string } | null>(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
             const data = await FirebaseStorage.getUsers();
-            setUsers(data);
+
+            // Auto-generate passwords for users who don't have one
+            const updates = [];
+            const usersWithPasswords = data.map(u => {
+                if (!u.password) {
+                    const generatedPass = u.displayName.split(' ')[0].toLowerCase().trim().replace(/[^a-z0-9]/g, ''); // "Berat Yıldız" -> "berat"
+                    updates.push(FirebaseStorage.updateUser(u.uid, { password: generatedPass }));
+                    return { ...u, password: generatedPass };
+                }
+                return u;
+            });
+
+            if (updates.length > 0) {
+                await Promise.all(updates);
+            }
+
+            setUsers(usersWithPasswords);
         };
         fetchUsers();
     }, []);
@@ -211,8 +250,13 @@ function UserManagementView() {
             role: newUserRole,
             active: true,
             createdAt: Date.now(),
-            password: generatedPass
+            password: generatedPass,
+            password: generatedPass,
         };
+
+        if (newUserUnit || newUserRole === 'sorumlu') {
+            newUser.unit = newUserUnit || 'Teşkilat';
+        }
 
         await FirebaseStorage.createUser(newUser);
         setUsers([...users, newUser]);
@@ -271,6 +315,17 @@ function UserManagementView() {
                         <option value="viewer">İzleyici</option>
                     </select>
                 </div>
+
+                {newUserRole === 'sorumlu' && (
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-bold text-foreground/50 uppercase">Birim</label>
+                        <UnitSelector
+                            value={newUserUnit}
+                            onChange={setNewUserUnit}
+                        />
+                    </div>
+                )}
+
                 <div className="flex items-end">
                     <button
                         onClick={handleAddUser}
@@ -309,7 +364,17 @@ function UserManagementView() {
                             </div>
                             <div>
                                 <div className="text-sm font-semibold">{u.displayName}</div>
-                                <div className="text-xs text-foreground/40">@{u.username} • {u.role}</div>
+                                <div className="text-xs text-foreground/40">
+                                    @{u.username} •
+                                    <span className={clsx("ml-1 font-medium", u.role === 'sorumlu' ? "text-primary" : "")}>
+                                        {u.role === 'sorumlu' ? (u.unit ? `${u.unit} Sorumlusu` : 'Teşkilat Sorumlusu') : u.role}
+                                    </span>
+                                </div>
+
+                                {/* Password Reveal */}
+                                <div className="mt-2">
+                                    <PasswordReveal user={u} />
+                                </div>
                             </div>
                         </div>
                         {u.username !== 'admin' && (
@@ -323,6 +388,33 @@ function UserManagementView() {
                     </div>
                 ))}
             </div>
+        </div>
+    );
+}
+
+function PasswordReveal({ user }: { user: User }) {
+    const [isRevealed, setIsRevealed] = useState(false);
+
+    return (
+        <div className="flex items-center gap-3">
+            <button
+                onClick={() => setIsRevealed(!isRevealed)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-border rounded-lg text-xs font-medium text-foreground/70 hover:text-primary hover:border-primary/30 transition-all active:scale-95"
+            >
+                {isRevealed ? <EyeOff size={14} /> : <Key size={14} />}
+                {isRevealed ? "Gizle" : "Giriş Bilgilerini Gör"}
+            </button>
+
+            {isRevealed && (
+                <div className="animate-slide-in flex flex-col gap-0.5 px-3 py-1.5 bg-primary/5 border border-primary/20 rounded-lg">
+                    <div className="text-[10px] uppercase font-bold text-primary/60">Kullanıcı Adı / Şifre</div>
+                    <div className="flex items-center gap-2 text-xs font-mono font-medium text-foreground">
+                        <span>{user.username}</span>
+                        <span className="text-foreground/30">|</span>
+                        <span>{user.password || "---"}</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -389,11 +481,59 @@ function ProvinceManagementView() {
     const coordinators = users.filter(u => u.role === 'koordinator' || u.role === 'admin');
     const responsibles = users.filter(u => u.role === 'sorumlu' || u.role === 'admin');
 
+    // Stats
+    const totalProvinces = tracked.length;
+    const distribution = tracked.reduce((acc, curr) => {
+        const name = curr.sorumluName || "(Atanmamış)";
+        acc[name] = (acc[name] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+    const sortedDistribution = Object.entries(distribution).sort(([, a], [, b]) => b - a);
+
     return (
         <div className="space-y-8 animate-fade-in">
             <div className="space-y-2">
                 <h2 className="text-2xl font-bold tracking-tight">Takip Edilen İller</h2>
                 <p className="text-sm text-foreground/60">Sisteme dahil edilecek illeri seçin ve sorumlu atamalarını yapın.</p>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-6 bg-surface/50 border border-border rounded-2xl flex items-center gap-4 shadow-sm hover:border-primary/20 transition-colors">
+                    <div className="p-4 bg-primary/10 rounded-2xl text-primary">
+                        <MapPin size={28} />
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold tracking-tighter">{totalProvinces}</div>
+                        <div className="text-[10px] font-bold text-foreground/50 uppercase tracking-widest">Takip Edilen İl</div>
+                    </div>
+                </div>
+
+                <div className="md:col-span-2 p-6 bg-surface/50 border border-border rounded-2xl space-y-4 shadow-sm hover:border-primary/20 transition-colors">
+                    <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                        <h3 className="text-[10px] font-bold text-foreground/50 uppercase tracking-widest flex items-center gap-2">
+                            <Users size={14} />
+                            Sorumlu Dağılımı
+                        </h3>
+                        <div className="text-[10px] font-bold text-foreground/40 bg-background px-2 py-1 rounded-md">{sortedDistribution.length} Kişi</div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-8 gap-y-3 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
+                        {sortedDistribution.map(([name, count]) => (
+                            <div key={name} className="space-y-1">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="font-medium truncate text-foreground/80">{name}</span>
+                                    <span className="font-bold text-foreground">{count}</span>
+                                </div>
+                                <div className="h-1.5 bg-background rounded-full overflow-hidden border border-border/50">
+                                    <div
+                                        className="h-full bg-primary/80 rounded-full"
+                                        style={{ width: `${(count / totalProvinces) * 100}%` }}
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Add Province */}
@@ -523,6 +663,14 @@ function AnalysisView() {
                     </svg>
                     <span className="absolute text-lg font-bold">%{completionRate}</span>
                 </div>
+            </div>
+
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatBox label="Toplam" value={entries.length} />
+                <StatBox label="Görüşüldü" value={completed} color="text-success" />
+                <StatBox label="Görüşülmedi" value={entries.filter(e => e.status === 'Görüşülmedi').length} color="text-error" />
+                <StatBox label="Koordinatör Arandı" value={entries.filter(e => e.koordinatorArandi).length} color="text-blue-500" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -925,3 +1073,228 @@ function NotesList({ notebookId, notes, onUpdate }: { notebookId: string, notes:
         </div>
     );
 }
+
+function FeedbackManagementView() {
+    const [entries, setEntries] = useState<Entry[]>([]);
+    const [filter, setFilter] = useState<'pending' | 'all'>('pending');
+
+    const fetchData = async () => {
+        const data = await FirebaseStorage.getEntries();
+        // Only show items with feedback
+        setEntries(data.filter(e => e.sorumluGorus).sort((a, b) => (b.sorumluGorusTarihi || 0) - (a.sorumluGorusTarihi || 0)));
+    };
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const handleReply = async (entry: Entry, reply: string) => {
+        if (!reply.trim()) return;
+        await FirebaseStorage.updateEntry(entry.id, {
+            adminYorum: reply,
+            adminYorumTarihi: Date.now(),
+            adminOnay: true
+        });
+        await fetchData();
+    };
+
+    const handleToggleRead = async (entry: Entry) => {
+        await FirebaseStorage.updateEntry(entry.id, {
+            genelSorumluOkundu: !entry.genelSorumluOkundu
+        });
+        await fetchData();
+    };
+
+    const filtered = filter === 'pending'
+        ? entries.filter(e => !e.adminOnay)
+        : entries;
+
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Geri Bildirimler</h2>
+                    <p className="text-sm text-foreground/60">Sorumlulardan gelen görüş ve önerileri değerlendirin.</p>
+                </div>
+                <div className="flex bg-surface rounded-lg p-1 border border-border">
+                    <button
+                        onClick={() => setFilter('pending')}
+                        className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filter === 'pending' ? 'bg-primary text-white shadow-sm' : 'text-foreground/60 hover:text-foreground'}`}
+                    >
+                        Bekleyenler
+                    </button>
+                    <button
+                        onClick={() => setFilter('all')}
+                        className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${filter === 'all' ? 'bg-primary text-white shadow-sm' : 'text-foreground/60 hover:text-foreground'}`}
+                    >
+                        Tüm Geçmiş
+                    </button>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                {filtered.map(entry => (
+                    <FeedbackCard key={entry.id} entry={entry} onReply={handleReply} onToggleRead={handleToggleRead} />
+                ))}
+                {filtered.length === 0 && (
+                    <div className="text-center py-12 text-foreground/30 border-2 border-dashed border-border rounded-3xl">
+                        <MessageCircle size={48} className="mx-auto mb-4 opacity-10" />
+                        <p className="text-sm font-bold uppercase tracking-widest">Gösterilecek geri bildirim yok.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function FeedbackCard({ entry, onReply, onToggleRead }: { entry: Entry, onReply: (e: Entry, r: string) => Promise<void>, onToggleRead: (e: Entry) => Promise<void> }) {
+    const [reply, setReply] = useState(entry.adminYorum || "");
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const hasReplied = !!entry.adminOnay;
+
+    return (
+        <div className={`bg-card border ${hasReplied ? 'border-border' : 'border-primary/30'} rounded-2xl p-6 transition-all duration-300 shadow-sm hover:shadow-md`}>
+            <div className="flex items-start justify-between mb-4">
+                <div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-bold text-foreground">{entry.provinceName}</span>
+                        <span className="text-xs text-foreground/50">• {entry.koordinatorName}</span>
+                    </div>
+                    <div className="text-xs text-foreground/40 font-mono">
+                        {entry.sorumluGorusTarihi ? new Date(entry.sorumluGorusTarihi).toLocaleDateString('tr-TR') : '-'}
+                    </div>
+                </div>
+                <button
+                    onClick={() => onToggleRead(entry)}
+                    className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border transition-all ${entry.genelSorumluOkundu ? 'bg-primary/10 border-primary/20 text-primary' : 'bg-surface border-border text-foreground/40 hover:border-foreground/20'}`}
+                >
+                    {entry.genelSorumluOkundu ? <CheckSquare size={12} /> : <Square size={12} />}
+                    {entry.genelSorumluOkundu ? 'Okundu' : 'Okunmadı'}
+                </button>
+            </div>
+
+            <div className="bg-surface/50 p-4 rounded-xl border border-border/50 mb-4 space-y-2">
+                <div className="text-[10px] font-bold text-foreground/30 uppercase">Sorumlu Görüşü ({entry.sorumluName})</div>
+                <p className="text-sm text-foreground/80 italic">"{entry.sorumluGorus}"</p>
+            </div>
+
+            <div className="space-y-2">
+                <div className="text-[10px] font-bold text-foreground/30 uppercase">Admin Cevabı</div>
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={reply}
+                        onChange={(e) => setReply(e.target.value)}
+                        placeholder="Örn: Onaylandı, aksiyon alalım."
+                        className="flex-1 px-4 py-2 bg-surface border border-border rounded-xl text-sm focus:outline-none focus:border-primary transition-all"
+                        disabled={hasReplied && !isExpanded}
+                    />
+                    {(!hasReplied || isExpanded) ? (
+                        <button
+                            onClick={() => { onReply(entry, reply); setIsExpanded(false); }}
+                            className="bg-foreground text-background px-4 py-2 rounded-xl text-xs font-bold hover:opacity-90 transition-opacity"
+                        >
+                            Gönder
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => setIsExpanded(true)}
+                            className="bg-surface text-foreground border border-border px-4 py-2 rounded-xl text-xs font-bold hover:bg-hover transition-colors"
+                        >
+                            Düzenle
+                        </button>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function StatBox({ label, value, color }: { label: string, value: number, color?: string }) {
+    return (
+        <div className="bg-surface/50 border border-border p-4 rounded-2xl flex flex-col gap-1 items-center justify-center text-center">
+            <span className={`text-2xl font-bold tracking-tighter ${color || 'text-foreground'}`}>{value}</span>
+            <span className="text-[10px] font-bold text-foreground/40 uppercase tracking-widest">{label}</span>
+        </div>
+    )
+}
+const EducationManagementView = () => {
+    const [trainings, setTrainings] = useState<(Training & { enrollmentCount?: number })[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        loadTrainings();
+    }, []);
+
+    const loadTrainings = async () => {
+        setLoading(true);
+        const data = await FirebaseStorage.getTrainings();
+
+        // Load counts
+        const enriched = await Promise.all(data.map(async (t) => {
+            const enrollments = await FirebaseStorage.getTrainingEnrollments(t.id);
+            return { ...t, enrollmentCount: enrollments.length };
+        }));
+
+        setTrainings(enriched);
+        setLoading(false);
+    };
+
+    const handleResetProgress = async (training: Training) => {
+        if (!confirm(`"${training.title}" eğitimi için TÜM KULLANICILARIN ilerlemesini sıfırlamak (kayıtlarını silmek) istediğinize emin misiniz?`)) return;
+
+        try {
+            const enrollments = await FirebaseStorage.getTrainingEnrollments(training.id);
+            const deletePromises = enrollments.map(e => FirebaseStorage.deleteEnrollment(e.id));
+            await Promise.all(deletePromises);
+
+            alert(`"${training.title}" eğitimi için ${enrollments.length} kayıt silindi.`);
+            loadTrainings(); // Refresh list to show 0
+        } catch (error) {
+            console.error("Error resetting progress:", error);
+            alert("İlerleme sıfırlanırken hata oluştu.");
+        }
+    };
+
+    return (
+        <div className="space-y-6 animate-fade-in">
+            <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold tracking-tight">Eğitim Yönetimi</h2>
+                <div className="text-sm text-foreground/50">
+                    Toplam {trainings.length} eğitim
+                </div>
+            </div>
+
+            {loading ? (
+                <div className="text-center py-8 text-foreground/40">Yükleniyor...</div>
+            ) : (
+                <div className="grid gap-4">
+                    {trainings.map(training => (
+                        <div key={training.id} className="bg-surface p-4 rounded-xl border border-border flex items-center justify-between">
+                            <div>
+                                <h3 className="font-bold">{training.title}</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <p className="text-xs text-foreground/50">{training.category}</p>
+                                    <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+                                        {(training as any).enrollmentCount} Kayıtlı Kullanıcı
+                                    </span>
+                                    <span className="text-[10px] text-foreground/30 font-mono">ID: {training.id.substring(0, 6)}...</span>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => handleResetProgress(training)}
+                                className="px-4 py-2 bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white rounded-lg text-xs font-bold transition-all"
+                            >
+                                İlerlemeyi Sıfırla (Reset)
+                            </button>
+                        </div>
+                    ))}
+                    {trainings.length === 0 && (
+                        <div className="text-center py-8 text-foreground/40">Kayıtlı eğitim bulunamadı.</div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
