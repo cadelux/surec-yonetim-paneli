@@ -52,7 +52,7 @@ export default function EducationDashboard({ user }: EducationDashboardProps) {
                     onCreated={(training) => {
                         setIsCreateModalOpen(false);
                         const slug = training.pageUrl.split('/').pop();
-                        window.location.href = `/egitim/duzenle/${slug}`;
+                        window.location.href = `/egitim/duzenle/detay?slug=${slug}`;
                     }}
                 />
             )}
@@ -167,7 +167,7 @@ function TrainingsView() {
 
                     <div className="flex items-center justify-between pt-4 border-t border-border/50 gap-2 mt-auto">
                         <a
-                            href={`/egitim/duzenle/${t.pageUrl.split('/').pop()}`}
+                            href={`/egitim/duzenle/detay?slug=${t.pageUrl.split('/').pop()}`}
                             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-surface hover:bg-hover border border-border rounded-xl text-xs font-bold transition-colors text-foreground/70"
                         >
                             <Edit size={14} />
@@ -175,7 +175,7 @@ function TrainingsView() {
                         </a>
 
                         <a
-                            href={t.pageUrl}
+                            href={`/egitim/oku?slug=${t.pageUrl.split('/').pop()}`}
                             target="_blank"
                             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-foreground text-background rounded-xl text-xs font-bold hover:opacity-80 transition-opacity"
                         >

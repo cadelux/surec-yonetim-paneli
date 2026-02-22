@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Training } from '../../../types';
 import { FirebaseStorage } from '../../../services/firebaseStorage';
 import TrainingEditor from '../../../components/TrainingEditor';
@@ -8,13 +9,18 @@ import { db } from '../../../lib/firebase';
 import Link from 'next/link';
 // ... rest of the file
 
-export default function EditTrainingPage({ params }: { params: Promise<{ slug: string }> }) {
-    const { slug } = React.use(params);
+function EditTrainingPageContent() {
+    const searchParams = useSearchParams();
+    const slug = searchParams.get('slug');
     const [training, setTraining] = useState<Training | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchTraining = async () => {
+            if (!slug) {
+                setLoading(false);
+                return;
+            }
             try {
                 // Find training by partial match on pageUrl or use ID if available
                 // Assuming slug might be part of the URL or the ID. 
@@ -75,7 +81,7 @@ export default function EditTrainingPage({ params }: { params: Promise<{ slug: s
             onSave={() => {
                 // Determine save message or redirect
                 if (confirm("Eğitim başarıyla güncellendi. Eğitim sayfasına gitmek ister misiniz?")) {
-                    window.location.href = training.pageUrl;
+                    window.location.href = `/egitim/oku?slug=${training.pageUrl.split('/').pop()}`;
                 }
             }}
             onDelete={async () => {
@@ -90,5 +96,13 @@ export default function EditTrainingPage({ params }: { params: Promise<{ slug: s
                 }
             }}
         />
+    );
+}
+
+export default function EditTrainingPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+            <EditTrainingPageContent />
+        </Suspense>
     );
 }

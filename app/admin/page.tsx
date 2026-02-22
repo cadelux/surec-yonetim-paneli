@@ -211,7 +211,7 @@ function UserManagementView() {
             const data = await FirebaseStorage.getUsers();
 
             // Auto-generate passwords for users who don't have one
-            const updates = [];
+            const updates: Promise<void>[] = [];
             const usersWithPasswords = data.map(u => {
                 if (!u.password) {
                     const generatedPass = u.displayName.split(' ')[0].toLowerCase().trim().replace(/[^a-z0-9]/g, ''); // "Berat Yıldız" -> "berat"
@@ -250,7 +250,6 @@ function UserManagementView() {
             role: newUserRole,
             active: true,
             createdAt: Date.now(),
-            password: generatedPass,
             password: generatedPass,
         };
 

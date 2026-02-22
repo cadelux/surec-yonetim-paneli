@@ -152,7 +152,7 @@ export default function UserEducationView({ user }: UserEducationViewProps) {
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-2 shrink-0">
-                                                <a href={t.pageUrl} target="_blank" className="p-2 bg-surface hover:bg-hover rounded-lg text-foreground/70 transition-colors" title="Eğitime Git">
+                                                <a href={`/egitim/oku?slug=${t.pageUrl.split('/').pop()}`} target="_blank" className="p-2 bg-surface hover:bg-hover rounded-lg text-foreground/70 transition-colors" title="Eğitime Git">
                                                     <ExternalLink size={18} />
                                                 </a>
                                                 <button

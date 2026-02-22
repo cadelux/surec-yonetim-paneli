@@ -1,6 +1,6 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Training } from '../../types';
 import { ArrowLeft, BookOpen, Clock, Calendar, Share2, PlayCircle, CheckCircle, ChevronRight, ChevronLeft, Target, MessageCircle, Ear, Heart, Users, ShieldAlert, Award, Mic, FileText, XCircle, Zap, Smile } from 'lucide-react';
 import Link from 'next/link';
@@ -382,8 +382,9 @@ const COMMUNICATION_CONTENT = [
     }
 ];
 
-export default function TrainingPage() {
-    const params = useParams();
+function TrainingPageContent() {
+    const searchParams = useSearchParams();
+    const slug = searchParams.get('slug');
     const [training, setTraining] = useState<Training | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -392,9 +393,9 @@ export default function TrainingPage() {
 
     useEffect(() => {
         const fetchTraining = async () => {
-            if (!params.slug) return;
+            if (!slug) return;
 
-            const fullPath = `/egitim/${params.slug}`;
+            const fullPath = `/egitim/${slug}`;
 
             try {
                 const q = query(
@@ -415,7 +416,7 @@ export default function TrainingPage() {
         };
 
         fetchTraining();
-    }, [params.slug]);
+    }, [slug]);
 
 
 
@@ -656,5 +657,13 @@ export default function TrainingPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function TrainingPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-background"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div></div>}>
+            <TrainingPageContent />
+        </Suspense>
     );
 }

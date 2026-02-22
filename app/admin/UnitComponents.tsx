@@ -77,6 +77,8 @@ export function UnitManagementView() {
             assignedToUnit: selectedUnitForTask.name,
             assignedToUserId: manager?.uid,
             assignedBy: 'admin', // Ideally get current user ID
+            senderName: 'Admin',
+            senderRole: 'admin',
             title,
             description,
             status: 'pending'
