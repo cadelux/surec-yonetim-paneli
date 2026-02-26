@@ -20,6 +20,14 @@ export default function TaskWidget({ user }: TaskWidgetProps) {
     const [isExpanded, setIsExpanded] = useState(true);
     const [activeTab, setActiveTab] = useState<TabType>('received');
     const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
+    const [usersMap, setUsersMap] = useState<Record<string, User>>({});
+
+    useEffect(() => {
+        FirebaseStorage.getUsers().then(users => {
+            const map = users.reduce((acc, u) => ({ ...acc, [u.uid]: u }), {} as Record<string, User>);
+            setUsersMap(map);
+        }).catch(err => console.error("Could not fetch users for task mapping:", err));
+    }, []);
 
     // Completion Modal
     const [completingTask, setCompletingTask] = useState<Task | null>(null);
@@ -343,7 +351,13 @@ export default function TaskWidget({ user }: TaskWidgetProps) {
                                             <div key={task.id} className="p-4 bg-background border border-border rounded-xl hover:shadow-sm transition-all">
                                                 <div className="flex flex-col gap-2">
                                                     <div className="flex items-center justify-between">
-                                                        <h5 className="font-bold text-sm text-foreground">{task.title}</h5>
+                                                        <div>
+                                                            <h5 className="font-bold text-sm text-foreground">{task.title}</h5>
+                                                            <p className="text-[11px] text-foreground/60 mt-0.5 flex items-center gap-1 font-medium bg-surface/50 inline-flex px-1.5 py-0.5 rounded">
+                                                                <UserIcon size={10} className="text-primary" />
+                                                                İletildi: {task.receiverName || (task.assignedToUserId && usersMap[task.assignedToUserId] ? `${usersMap[task.assignedToUserId].displayName} (${usersMap[task.assignedToUserId].role})` : '-')}
+                                                            </p>
+                                                        </div>
                                                         <div className="flex items-center gap-2">
                                                             {task.readAt ? (
                                                                 <span className="text-[10px] flex items-center gap-1 text-blue-500 bg-blue-50 px-2 py-1 rounded font-medium" title="Görüldü">

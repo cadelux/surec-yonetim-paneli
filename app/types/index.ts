@@ -121,6 +121,7 @@ export interface Task {
     assignedBy: string; // User ID
     senderName: string; // Display name of sender
     senderRole: string; // Role of sender
+    receiverName?: string; // Display name of the receiver
     title: string;
     description: string;
     status: 'pending' | 'completed';

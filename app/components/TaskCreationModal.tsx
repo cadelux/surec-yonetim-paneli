@@ -58,6 +58,9 @@ export default function TaskCreationModal({ isOpen, onClose, currentUser, onTask
         if (!title.trim() || !description.trim() || !selectedUserId) return;
 
         setSending(true);
+        const receiverUser = users.find(u => u.uid === selectedUserId);
+        const receiverNameInfo = receiverUser ? `${receiverUser.displayName} (${receiverUser.role})` : '';
+
         try {
             await FirebaseStorage.createTask({
                 title,
@@ -66,6 +69,7 @@ export default function TaskCreationModal({ isOpen, onClose, currentUser, onTask
                 assignedBy: currentUser.uid,
                 senderName: currentUser.displayName,
                 senderRole: currentUser.role,
+                receiverName: receiverNameInfo,
                 status: 'pending',
                 // assignedToUnit: ... optionally derive from user
             });
