@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Training } from '../../../types';
 import { FirebaseStorage } from '../../../services/firebaseStorage';
 import TrainingEditor from '../../../components/TrainingEditor';
@@ -11,6 +11,7 @@ import Link from 'next/link';
 
 function EditTrainingPageContent() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const slug = searchParams.get('slug');
     const [training, setTraining] = useState<Training | null>(null);
     const [loading, setLoading] = useState(true);
@@ -77,19 +78,17 @@ function EditTrainingPageContent() {
     return (
         <TrainingEditor
             training={training}
-            onClose={() => window.location.href = '/'} // Return to dashboard
+            onClose={() => router.push('/')} // Return to dashboard
             onSave={() => {
                 // Determine save message or redirect
                 if (confirm("Eğitim başarıyla güncellendi. Eğitim sayfasına gitmek ister misiniz?")) {
-                    window.location.href = `/egitim/oku?slug=${training.pageUrl.split('/').pop()}`;
+                    router.push(`/egitim/oku?slug=${training.pageUrl.split('/').pop()}`);
                 }
             }}
             onDelete={async () => {
                 try {
                     await FirebaseStorage.deleteTraining(training.id);
-                    // Alert handled by browser location change usually, but we can add one
-                    // alert("Eğitim silindi"); 
-                    window.location.href = '/';
+                    router.push('/');
                 } catch (error) {
                     console.error("Delete error:", error);
                     alert("Silme işlemi başarısız oldu.");

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, CheckCircle, PlayCircle, Clock, Search, Award, ArrowRight, ExternalLink, Calendar } from 'lucide-react';
 import { User, Training, Enrollment } from '../types';
 import { FirebaseStorage } from '../services/firebaseStorage'; // Assuming this export exists
+import Link from 'next/link';
 import clsx from 'clsx';
 
 interface UserEducationViewProps {
@@ -152,9 +153,9 @@ export default function UserEducationView({ user }: UserEducationViewProps) {
                                                 </div>
                                             </div>
                                             <div className="flex flex-col gap-2 shrink-0">
-                                                <a href={`/egitim/oku?slug=${t.pageUrl.split('/').pop()}`} target="_blank" className="p-2 bg-surface hover:bg-hover rounded-lg text-foreground/70 transition-colors" title="Eğitime Git">
+                                                <Link href={`/egitim/oku?slug=${t.pageUrl.split('/').pop()}`} target="_blank" className="p-2 bg-surface hover:bg-hover rounded-lg text-foreground/70 transition-colors" title="Eğitime Git">
                                                     <ExternalLink size={18} />
-                                                </a>
+                                                </Link>
                                                 <button
                                                     onClick={() => handleComplete(t.id)}
                                                     className="p-2 bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors"
