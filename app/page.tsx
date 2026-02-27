@@ -10,7 +10,7 @@ import Modal from './components/Modal';
 import EntryForm from './components/EntryForm';
 import ProvinceHistory from './components/ProvinceHistory';
 import * as XLSX from 'xlsx';
-import { Download, FileText, History as HistoryIcon, CheckSquare, Square, MessageCircle, Check } from "lucide-react";
+import { Download, FileText, History as HistoryIcon, CheckSquare, Square, MessageCircle, Check, LogOut } from "lucide-react";
 import UserEducationView from './components/UserEducationView';
 import EducationDashboard from './components/EducationDashboard';
 import FeedbackModal from './components/FeedbackModal';
@@ -425,57 +425,66 @@ export default function Dashboard() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
+            {/* Theme toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-hover transition-colors"
+              className="p-1.5 sm:p-2 rounded-full hover:bg-hover transition-colors shrink-0"
               aria-label="Tema değiştir"
             >
               {theme === 'dark' ?
-                <Sun size={16} className="text-foreground/70" /> :
-                <Moon size={16} className="text-foreground/70" />
+                <Sun size={15} className="text-foreground/70" /> :
+                <Moon size={15} className="text-foreground/70" />
               }
             </button>
 
+            {/* Excel export — ikon, mobilede text gizli */}
             {!isEducationResponsible && activeTab === 'entries' && (
               <button
                 onClick={exportToExcel}
                 title="Excel'e aktar"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-success/10 text-success hover:bg-success/20 rounded-full text-[11px] font-bold transition-all border border-success/20 whitespace-nowrap"
+                className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1.5 bg-success/10 text-success hover:bg-success/20 rounded-full text-[11px] font-bold transition-all border border-success/20 shrink-0"
               >
                 <Download size={12} />
                 <span className="hidden sm:inline">Excel</span>
               </button>
             )}
 
-            <div className="flex flex-col items-end">
-              <span className="text-sm font-medium text-foreground">{user.displayName}</span>
-              <span className="text-xs text-foreground/50 capitalize text-right">
+            {/* User info — compact on mobile */}
+            <div className="flex flex-col items-end shrink-0 min-w-0">
+              <span className="text-[11px] sm:text-sm font-semibold text-foreground text-right leading-tight truncate max-w-[90px] sm:max-w-none">
+                {user.displayName}
+              </span>
+              <span className="text-[9px] sm:text-xs text-foreground/50 capitalize text-right leading-tight mt-0.5">
                 {user.role === 'sorumlu' && user.unit ? `${user.unit} Sorumlusu` : user.role}
               </span>
             </div>
 
+            {/* Feedback button */}
             {(user.role === 'sorumlu' || user.role === 'koordinator') && !isEducationResponsible && (
               <button
                 onClick={() => {
                   localStorage.setItem('lastFeedbackReadTime', Date.now().toString());
                   router.push('/feedback');
                 }}
-                className="p-2 hover:bg-hover rounded-full transition-colors text-foreground/70 relative group"
+                className="p-1.5 sm:p-2 hover:bg-hover rounded-full transition-colors text-foreground/70 relative shrink-0"
                 title="Geri Bildirimlerim"
               >
-                <MessageCircle size={20} />
+                <MessageCircle size={17} />
                 {hasUnreadFeedback && (
-                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-card" />
+                  <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full animate-pulse border border-card" />
                 )}
               </button>
             )}
 
+            {/* Logout — icon on mobile, text+icon on desktop */}
             <button
               onClick={logout}
-              className="px-4 py-2 bg-card hover:bg-hover text-foreground text-sm font-medium rounded-full transition-all duration-200 active:scale-95"
+              className="flex items-center gap-1.5 px-2 sm:px-4 py-1.5 sm:py-2 bg-card hover:bg-hover text-foreground text-xs sm:text-sm font-medium rounded-full transition-all duration-200 active:scale-95 shrink-0"
+              title="Çıkış"
             >
-              Çıkış
+              <LogOut size={14} className="sm:hidden" />
+              <span className="hidden sm:inline">Çıkış</span>
             </button>
           </div>
         </div>
