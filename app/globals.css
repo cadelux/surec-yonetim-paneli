@@ -543,95 +543,95 @@ textarea::placeholder {
   color: #ffffff !important;
 }
 
-/* --- ISLAMIC CRESCENT DECORATION --- */
-@keyframes crescent-fall {
+/* --- ISLAMIC CRESCENT SWING DECORATION --- */
+@keyframes crescent-swing {
   0% {
-    transform: translateY(-60px) rotate(0deg);
-    opacity: 0;
+    transform: rotate(-18deg);
   }
-  10% {
-    opacity: 0.12;
+
+  50% {
+    transform: rotate(18deg);
   }
-  90% {
-    opacity: 0.07;
-  }
+
   100% {
-    transform: translateY(100vh) rotate(20deg);
-    opacity: 0;
+    transform: rotate(-18deg);
   }
 }
 
-@keyframes crescent-fall-reverse {
+@keyframes crescent-swing-slow {
   0% {
-    transform: translateY(-60px) rotate(-10deg);
-    opacity: 0;
+    transform: rotate(-12deg);
   }
-  10% {
-    opacity: 0.09;
+
+  50% {
+    transform: rotate(12deg);
   }
-  90% {
-    opacity: 0.05;
-  }
+
   100% {
-    transform: translateY(100vh) rotate(-25deg);
-    opacity: 0;
+    transform: rotate(-12deg);
   }
 }
 
-.crescent-decoration {
+/* Wrapper: fixed to top-left corner, acts as the "nail" */
+.crescent-hanger {
   position: fixed;
   top: 0;
+  left: 18px;
   pointer-events: none;
-  z-index: 0;
-  user-select: none;
-  color: var(--color-primary);
-  font-size: 18px;
-  line-height: 1;
-  opacity: 0;
+  z-index: 9999;
+  /* pivot at top centre */
+  transform-origin: top center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.crescent-left-1 {
-  left: 12px;
-  animation: crescent-fall 18s linear infinite;
-  animation-delay: 0s;
-  font-size: 14px;
+/* The thin string */
+.crescent-string {
+  width: 1.5px;
+  height: 48px;
+  background: linear-gradient(to bottom,
+      rgba(0, 113, 227, 0.35),
+      rgba(0, 113, 227, 0.08));
+  border-radius: 2px;
 }
 
-.crescent-left-2 {
-  left: 36px;
-  animation: crescent-fall 24s linear infinite;
-  animation-delay: 5s;
-  font-size: 10px;
+/* The crescent SVG wrapper */
+.crescent-icon {
+  margin-top: -1px;
+  opacity: 0.55;
+  filter: drop-shadow(0 2px 6px rgba(0, 113, 227, 0.3));
 }
 
-.crescent-left-3 {
-  left: 22px;
-  animation: crescent-fall 20s linear infinite;
-  animation-delay: 12s;
-  font-size: 16px;
+/* Swing animation applied to the whole hanger */
+.crescent-animate {
+  animation: crescent-swing 5s ease-in-out infinite;
+  transform-origin: top center;
 }
 
-.crescent-right-1 {
-  right: 14px;
-  animation: crescent-fall-reverse 22s linear infinite;
-  animation-delay: 3s;
-  font-size: 13px;
+.crescent-animate-slow {
+  animation: crescent-swing-slow 7s ease-in-out infinite;
+  transform-origin: top center;
+  animation-delay: 1.5s;
 }
 
-.crescent-right-2 {
-  right: 38px;
-  animation: crescent-fall-reverse 16s linear infinite;
-  animation-delay: 8s;
-  font-size: 11px;
+/* Dark mode colours */
+.dark .crescent-string {
+  background: linear-gradient(to bottom,
+      rgba(160, 196, 255, 0.4),
+      rgba(160, 196, 255, 0.06));
 }
 
-.crescent-right-3 {
-  right: 20px;
-  animation: crescent-fall-reverse 26s linear infinite;
-  animation-delay: 15s;
-  font-size: 15px;
+.dark .crescent-icon {
+  filter: drop-shadow(0 2px 8px rgba(160, 196, 255, 0.4));
+  opacity: 0.5;
 }
 
-.dark .crescent-decoration {
-  color: #a0c4ff;
+/* SVG path fill */
+.crescent-svg path {
+  fill: #0071e3;
+}
+
+.dark .crescent-svg path {
+  fill: #a0c4ff;
 }
