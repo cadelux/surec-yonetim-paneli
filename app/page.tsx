@@ -421,7 +421,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-foreground">KONYEVİ GENÇLİK</h1>
             <p className="text-xs text-foreground/50 mt-0.5">
-              {isEducationResponsible ? 'Eğitim Yönetim Paneli' : 'İl Listesi'}
+              {isEducationResponsible ? 'Eğitim Yönetim Paneli' : 'Süreç Yönetimi'}
             </p>
           </div>
 
@@ -523,8 +523,9 @@ export default function Dashboard() {
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-4 mb-6">
+                  {/* Top row: View buttons */}
+                  <div className="flex items-center gap-2 flex-wrap">
                     <button className="px-4 py-2 bg-foreground text-background text-sm font-medium rounded-full transition-all duration-200 active:scale-95">
                       <LayoutGrid size={14} className="inline mr-2" />
                       İl Listesi
@@ -539,15 +540,16 @@ export default function Dashboard() {
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-3 w-full lg:w-auto">
-                    <div className="relative flex-1 lg:flex-none">
+                  {/* Bottom row: Search + Admin buttons - wraps on mobile */}
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="relative w-full sm:w-64">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={16} />
                       <input
                         type="text"
                         placeholder="Ara..."
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="pl-10 pr-4 py-2 bg-card border border-border rounded-full text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all w-full lg:w-64"
+                        className="pl-10 pr-4 py-2 bg-card border border-border rounded-full text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all w-full"
                       />
                     </div>
 
@@ -592,7 +594,7 @@ export default function Dashboard() {
                           <th className="px-6 py-4"></th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border">
+                      <tbody>
                         {loading ? (
                           <tr>
                             <td colSpan={user?.role === 'koordinator' ? 8 : 9} className="px-6 py-12 text-center text-sm text-foreground/50">
@@ -602,7 +604,7 @@ export default function Dashboard() {
                         ) : filteredEntries.map((row) => (
                           <tr
                             key={row.id}
-                            className="group relative transition-all duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-none hover:scale-[1.005] hover:z-10 hover:bg-card dark:hover:bg-white/5 border-transparent border-l-4 hover:border-primary dark:hover:border-transparent"
+                            className="group relative transition-all duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-none hover:scale-[1.005] hover:z-10 hover:bg-card dark:hover:bg-white/5 border-transparent border-l-4 hover:border-primary dark:hover:border-transparent border-b border-border/30 dark:border-white/5"
                           >
                             <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); setHistoryProvince(row.provinceName); }}>
                               <div className="flex flex-col cursor-pointer group/prov">
@@ -651,8 +653,8 @@ export default function Dashboard() {
                               </td>
                             )}
 
-                            <td className="px-6 py-4">
-                              <span className="px-3 py-1 bg-surface text-foreground/70 rounded-full text-xs font-medium">
+                            <td className="px-6 py-4 text-center">
+                              <span className="px-3 py-1 bg-surface text-foreground/70 rounded-full text-xs font-medium text-center block mx-auto w-fit">
                                 {row.sorumluName || '-'}
                               </span>
                             </td>

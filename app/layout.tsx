@@ -30,6 +30,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
+          {/* Islamic Crescent Decorations */}
+          <span className="crescent-decoration crescent-left-1" aria-hidden="true">☽</span>
+          <span className="crescent-decoration crescent-left-2" aria-hidden="true">☽</span>
+          <span className="crescent-decoration crescent-left-3" aria-hidden="true">☽</span>
+          <span className="crescent-decoration crescent-right-1" aria-hidden="true">☽</span>
+          <span className="crescent-decoration crescent-right-2" aria-hidden="true">☽</span>
+          <span className="crescent-decoration crescent-right-3" aria-hidden="true">☽</span>
           {children}
         </AuthProvider>
       </body>

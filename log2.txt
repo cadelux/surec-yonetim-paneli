@@ -1,0 +1,5 @@
+50c2d10 fix: resolve static export issues by converting dynamic slug paths to query params and fix ts errors
+c864c5f Trigger GitHub Pages deployment
+6d1b100 Configure GitHub Pages deployment
+34a5366 Merge pull request #1 from cadelux/surecyonetimV1
+15495a9 surecyonetimV1 updates

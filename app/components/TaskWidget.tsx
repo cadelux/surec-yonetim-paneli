@@ -18,7 +18,7 @@ export default function TaskWidget({ user }: TaskWidgetProps) {
     const [personalTasks, setPersonalTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(true);
-    const [activeTab, setActiveTab] = useState<TabType>('received');
+    const [activeTab, setActiveTab] = useState<TabType>('sent');
     const [isCreationModalOpen, setIsCreationModalOpen] = useState(false);
     const [usersMap, setUsersMap] = useState<Record<string, User>>({});
 
@@ -208,12 +208,6 @@ export default function TaskWidget({ user }: TaskWidgetProps) {
                     {/* Tabs & Actions */}
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-border pb-4">
                         <div className="flex p-1 bg-surface rounded-xl overflow-x-auto no-scrollbar">
-                            <button
-                                onClick={() => setActiveTab('received')}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'received' ? 'bg-background shadow-sm text-foreground' : 'text-foreground/50 hover:text-foreground'}`}
-                            >
-                                Yapacaklarım ({receivedTasks.length})
-                            </button>
                             {!isKoordinator && (
                                 <button
                                     onClick={() => setActiveTab('sent')}
@@ -222,6 +216,12 @@ export default function TaskWidget({ user }: TaskWidgetProps) {
                                     Verdiklerim ({sentTasks.length})
                                 </button>
                             )}
+                            <button
+                                onClick={() => setActiveTab('received')}
+                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'received' ? 'bg-background shadow-sm text-foreground' : 'text-foreground/50 hover:text-foreground'}`}
+                            >
+                                Yapacaklarım ({receivedTasks.length})
+                            </button>
                             <button
                                 onClick={() => setActiveTab('personal')}
                                 className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${activeTab === 'personal' ? 'bg-background shadow-sm text-foreground' : 'text-foreground/50 hover:text-foreground'}`}

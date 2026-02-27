@@ -542,3 +542,96 @@ textarea::placeholder {
 :is(.dark) .feedback-content-text {
   color: #ffffff !important;
 }
+
+/* --- ISLAMIC CRESCENT DECORATION --- */
+@keyframes crescent-fall {
+  0% {
+    transform: translateY(-60px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.12;
+  }
+  90% {
+    opacity: 0.07;
+  }
+  100% {
+    transform: translateY(100vh) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+@keyframes crescent-fall-reverse {
+  0% {
+    transform: translateY(-60px) rotate(-10deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.09;
+  }
+  90% {
+    opacity: 0.05;
+  }
+  100% {
+    transform: translateY(100vh) rotate(-25deg);
+    opacity: 0;
+  }
+}
+
+.crescent-decoration {
+  position: fixed;
+  top: 0;
+  pointer-events: none;
+  z-index: 0;
+  user-select: none;
+  color: var(--color-primary);
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0;
+}
+
+.crescent-left-1 {
+  left: 12px;
+  animation: crescent-fall 18s linear infinite;
+  animation-delay: 0s;
+  font-size: 14px;
+}
+
+.crescent-left-2 {
+  left: 36px;
+  animation: crescent-fall 24s linear infinite;
+  animation-delay: 5s;
+  font-size: 10px;
+}
+
+.crescent-left-3 {
+  left: 22px;
+  animation: crescent-fall 20s linear infinite;
+  animation-delay: 12s;
+  font-size: 16px;
+}
+
+.crescent-right-1 {
+  right: 14px;
+  animation: crescent-fall-reverse 22s linear infinite;
+  animation-delay: 3s;
+  font-size: 13px;
+}
+
+.crescent-right-2 {
+  right: 38px;
+  animation: crescent-fall-reverse 16s linear infinite;
+  animation-delay: 8s;
+  font-size: 11px;
+}
+
+.crescent-right-3 {
+  right: 20px;
+  animation: crescent-fall-reverse 26s linear infinite;
+  animation-delay: 15s;
+  font-size: 15px;
+}
+
+.dark .crescent-decoration {
+  color: #a0c4ff;
+}
