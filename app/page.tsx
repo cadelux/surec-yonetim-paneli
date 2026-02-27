@@ -15,6 +15,7 @@ import UserEducationView from './components/UserEducationView';
 import EducationDashboard from './components/EducationDashboard';
 import FeedbackModal from './components/FeedbackModal';
 import TaskWidget from './components/TaskWidget';
+import Image from 'next/image';
 
 
 
@@ -418,9 +419,16 @@ export default function Dashboard() {
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-sm sm:text-xl font-semibold tracking-tight text-foreground">KONYEVİ GENÇLİK</h1>
-            <p className="text-[10px] sm:text-xs text-foreground/50 mt-0.5">
+          <div className="flex flex-col justify-center">
+            <Image
+              src="/logo.png"
+              alt="Konyevi Gençlik"
+              width={180}
+              height={44}
+              className="h-7 sm:h-9 w-auto object-contain object-left dark:invert"
+              priority
+            />
+            <p className="text-[10px] sm:text-xs text-foreground/50 mt-0.5 pl-0.5">
               {isEducationResponsible ? 'Eğitim Yönetim Paneli' : 'Süreç Yönetimi'}
             </p>
           </div>
