@@ -15,7 +15,6 @@ import UserEducationView from './components/UserEducationView';
 import EducationDashboard from './components/EducationDashboard';
 import FeedbackModal from './components/FeedbackModal';
 import TaskWidget from './components/TaskWidget';
-import NeyPlayer from './components/NeyPlayer';
 
 
 
@@ -416,9 +415,6 @@ export default function Dashboard() {
         readOnly={user?.role === 'koordinator'}
       />
 
-      {/* Ney Music Player */}
-      <NeyPlayer />
-
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
@@ -580,7 +576,7 @@ export default function Dashboard() {
                           <th className="px-6 py-4"></th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-border/20">
+                      <tbody>
                         {loading ? (
                           <tr>
                             <td colSpan={user?.role === 'koordinator' ? 8 : 9} className="px-6 py-12 text-center text-sm text-foreground/50">
@@ -590,7 +586,7 @@ export default function Dashboard() {
                         ) : filteredEntries.map((row) => (
                           <tr
                             key={row.id}
-                            className="group relative transition-all duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:hover:shadow-none hover:z-10 hover:bg-card dark:hover:bg-white/5 border-l-4 border-transparent hover:border-primary"
+                            className="group relative transition-all duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:hover:shadow-none hover:z-10 hover:bg-card dark:hover:bg-white/5 border-l-4 border-transparent hover:border-primary border-b border-border/25"
                           >
                             <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); setHistoryProvince(row.provinceName); }}>
                               <div className="flex flex-col cursor-pointer group/prov">
