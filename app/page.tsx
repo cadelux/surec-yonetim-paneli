@@ -1,7 +1,7 @@
 "use client";
-import { Search, Plus, MoreVertical, LayoutGrid, Map, Calendar, Trash2, Sun, Moon, Settings, Sparkles } from "lucide-react";
+import { Search, Plus, MoreVertical, LayoutGrid, Trash2, Sun, Moon, Settings, Sparkles } from "lucide-react";
 import clsx from "clsx";
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from "next/navigation";
 import { useAuth } from './context/AuthContext';
 import { FirebaseStorage } from './services/firebaseStorage';
@@ -15,6 +15,7 @@ import UserEducationView from './components/UserEducationView';
 import EducationDashboard from './components/EducationDashboard';
 import FeedbackModal from './components/FeedbackModal';
 import TaskWidget from './components/TaskWidget';
+import NeyPlayer from './components/NeyPlayer';
 
 
 
@@ -415,35 +416,39 @@ export default function Dashboard() {
         readOnly={user?.role === 'koordinator'}
       />
 
+      {/* Ney Music Player */}
+      <NeyPlayer />
+
       {/* Header */}
       <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-foreground">KONYEVİ GENÇLİK</h1>
-            <p className="text-xs text-foreground/50 mt-0.5">
+            <h1 className="text-sm sm:text-xl font-semibold tracking-tight text-foreground">KONYEVİ GENÇLİK</h1>
+            <p className="text-[10px] sm:text-xs text-foreground/50 mt-0.5">
               {isEducationResponsible ? 'Eğitim Yönetim Paneli' : 'Süreç Yönetimi'}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-hover transition-colors"
               aria-label="Tema değiştir"
             >
               {theme === 'dark' ?
-                <Sun size={18} className="text-foreground/70" /> :
-                <Moon size={18} className="text-foreground/70" />
+                <Sun size={16} className="text-foreground/70" /> :
+                <Moon size={16} className="text-foreground/70" />
               }
             </button>
 
             {!isEducationResponsible && activeTab === 'entries' && (
               <button
                 onClick={exportToExcel}
-                className="flex items-center gap-2 px-4 py-2 bg-success/10 text-success hover:bg-success/20 rounded-full text-xs font-bold transition-all border border-success/20"
+                title="Excel'e aktar"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 bg-success/10 text-success hover:bg-success/20 rounded-full text-[11px] font-bold transition-all border border-success/20 whitespace-nowrap"
               >
-                <Download size={14} />
-                Dışa Aktar (Excel)
+                <Download size={12} />
+                <span className="hidden sm:inline">Excel</span>
               </button>
             )}
 
@@ -523,56 +528,37 @@ export default function Dashboard() {
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-col gap-4 mb-6">
-                  {/* Top row: View buttons */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button className="px-4 py-2 bg-foreground text-background text-sm font-medium rounded-full transition-all duration-200 active:scale-95">
-                      <LayoutGrid size={14} className="inline mr-2" />
-                      İl Listesi
-                    </button>
-                    <button className="px-4 py-2 text-foreground/60 hover:text-foreground text-sm font-medium rounded-full hover:bg-hover transition-all duration-200 active:scale-95">
-                      <Map size={14} className="inline mr-2" />
-                      Bölge Listesi
-                    </button>
-                    <button className="px-4 py-2 text-foreground/60 hover:text-foreground text-sm font-medium rounded-full hover:bg-hover transition-all duration-200 active:scale-95">
-                      <Calendar size={14} className="inline mr-2" />
-                      Görüşme Takvimi
-                    </button>
+                <div className="flex flex-wrap items-center gap-3 mb-6">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={16} />
+                    <input
+                      type="text"
+                      placeholder="Ara..."
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-card border border-border rounded-full text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all w-full"
+                    />
                   </div>
 
-                  {/* Bottom row: Search + Admin buttons - wraps on mobile */}
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="relative w-full sm:w-64">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40" size={16} />
-                      <input
-                        type="text"
-                        placeholder="Ara..."
-                        value={searchInput}
-                        onChange={(e) => setSearchInput(e.target.value)}
-                        className="pl-10 pr-4 py-2 bg-card border border-border rounded-full text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all w-full"
-                      />
-                    </div>
+                  {user.role === 'admin' && (
+                    <>
+                      <button
+                        onClick={handleCreateNew}
+                        className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow whitespace-nowrap"
+                      >
+                        <Plus size={16} />
+                        Yeni Kayıt
+                      </button>
 
-                    {user.role === 'admin' && (
-                      <>
-                        <button
-                          onClick={handleCreateNew}
-                          className="flex items-center gap-2 px-5 py-2 bg-primary hover:bg-primary-hover text-white rounded-full text-sm font-semibold transition-all duration-200 shadow-sm hover:shadow whitespace-nowrap"
-                        >
-                          <Plus size={16} />
-                          Yeni Kayıt
-                        </button>
-
-                        <button
-                          onClick={() => router.push('/admin')}
-                          className="px-5 py-2 bg-card hover:bg-hover text-foreground border border-border rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2"
-                        >
-                          <Settings size={14} />
-                          Admin Paneli
-                        </button>
-                      </>
-                    )}
-                  </div>
+                      <button
+                        onClick={() => router.push('/admin')}
+                        className="px-5 py-2 bg-card hover:bg-hover text-foreground border border-border rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap flex items-center gap-2"
+                      >
+                        <Settings size={14} />
+                        Admin Paneli
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Table */}
@@ -594,7 +580,7 @@ export default function Dashboard() {
                           <th className="px-6 py-4"></th>
                         </tr>
                       </thead>
-                      <tbody>
+                      <tbody className="divide-y divide-border/20">
                         {loading ? (
                           <tr>
                             <td colSpan={user?.role === 'koordinator' ? 8 : 9} className="px-6 py-12 text-center text-sm text-foreground/50">
@@ -604,7 +590,7 @@ export default function Dashboard() {
                         ) : filteredEntries.map((row) => (
                           <tr
                             key={row.id}
-                            className="group relative transition-all duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] dark:hover:shadow-none hover:scale-[1.005] hover:z-10 hover:bg-card dark:hover:bg-white/5 border-transparent border-l-4 hover:border-primary dark:hover:border-transparent border-b border-border/30 dark:border-white/5"
+                            className="group relative transition-all duration-200 hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)] dark:hover:shadow-none hover:z-10 hover:bg-card dark:hover:bg-white/5 border-l-4 border-transparent hover:border-primary"
                           >
                             <td className="px-6 py-4" onClick={(e) => { e.stopPropagation(); setHistoryProvince(row.provinceName); }}>
                               <div className="flex flex-col cursor-pointer group/prov">
