@@ -580,6 +580,7 @@ export default function Dashboard() {
                             <th className="px-2 py-3 md:px-6 md:py-4 text-center text-[11px] md:text-xs font-semibold text-foreground/60 tracking-wider">K. ARANDI</th>
                           )}
                           <th className="px-3 py-3 md:px-6 md:py-4 text-left text-[11px] md:text-xs font-semibold text-foreground/60 tracking-wider">SORUMLU</th>
+                          <th className="px-2 py-3 md:px-6 md:py-4 text-center text-[11px] md:text-xs font-semibold text-foreground/60 tracking-wider">GÖRÜŞ</th>
                           <th className="px-3 py-3 md:px-6 md:py-4 text-left text-[11px] md:text-xs font-semibold text-foreground/60 tracking-wider">DURUM</th>
                           <th className="px-3 py-3 md:px-6 md:py-4 text-left text-[11px] md:text-xs font-semibold text-foreground/60 tracking-wider">NOTLAR</th>
                           <th className="px-3 py-3 md:px-6 md:py-4 text-center text-[11px] md:text-xs font-semibold text-foreground/60 tracking-wider">OKUNDU</th>
@@ -588,7 +589,7 @@ export default function Dashboard() {
                       <tbody className="divide-y divide-border">
                         {loading ? (
                           <tr>
-                            <td colSpan={user?.role === 'koordinator' ? 7 : 8} className="px-6 py-12 text-center text-sm text-foreground/50">
+                            <td colSpan={user?.role === 'koordinator' ? 8 : 9} className="px-6 py-12 text-center text-sm text-foreground/50">
                               <div className="animate-pulse">Yükleniyor...</div>
                             </td>
                           </tr>
@@ -669,6 +670,31 @@ export default function Dashboard() {
                                 <span className="inline-block whitespace-nowrap px-2 py-1 md:px-3 md:py-1 bg-surface text-foreground/70 rounded-full text-[9px] md:text-xs font-medium">
                                   {row.sorumluName || '-'}
                                 </span>
+                              </td>
+
+                              <td className="px-2 py-3 md:px-6 md:py-4 text-center">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    const isSorumlu = user?.role === 'sorumlu' && (row.sorumluId === user.uid || row.sorumluName === user.displayName);
+                                    const isAdmin = user?.role === 'admin';
+
+                                    if (isSorumlu || isAdmin) {
+                                      handleOpenFeedback(row);
+                                    } else {
+                                      alert("Görüşleri sadece yönetici ve ilgili ilin sorumlusu görüntüleyebilir.");
+                                    }
+                                  }}
+                                  className={`p-1.5 md:p-2 rounded-full relative transition-all group/gorus ${(user?.role === 'admin' || (user?.role === 'sorumlu' && (row.sorumluId === user.uid || row.sorumluName === user.displayName))) ? 'hover:bg-primary/5 cursor-pointer' : 'cursor-default opacity-50'}`}
+                                  title="Görüş / Mesaj Alanı"
+                                >
+                                  <MessageCircle size={16} className={`md:w-5 md:h-5 ${row.sorumluGorus || row.adminYorum ? 'text-primary' : 'text-foreground/30 group-hover/gorus:text-primary transition-colors'}`} />
+                                  {((user?.role === 'admin' && row.sorumluGorus && (!row.adminYorumTarihi || (row.sorumluGorusTarihi && row.sorumluGorusTarihi > row.adminYorumTarihi))) ||
+                                    (user?.role === 'sorumlu' && row.adminYorum && (!row.sorumluGorusTarihi || (row.adminYorumTarihi && row.adminYorumTarihi > row.sorumluGorusTarihi)))) && (
+                                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 border border-card shadow-sm"></span>
+                                    )}
+                                </button>
                               </td>
                               <td className="px-3 py-3 md:px-6 md:py-4">
                                 <div className="scale-75 md:scale-100 origin-left">
@@ -801,6 +827,17 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <FeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => {
+          setIsFeedbackModalOpen(false);
+          setFeedbackEntry(null);
+        }}
+        entry={feedbackEntry}
+        type={user?.role === 'admin' ? 'admin' : 'sorumlu'}
+        onSave={handleSaveFeedback}
+      />
     </div>
   );
 }
