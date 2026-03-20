@@ -48,6 +48,7 @@ export interface Entry {
 
     meetingDate: string; // Display text like "8 Ocak - 10 Ocak"
     notes: string;
+    notesTarihi?: number;     // Notun girildiği / güncellendiği tarih.
     status: EntryStatus;
 
     createdAt: number;

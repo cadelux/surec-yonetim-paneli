@@ -42,3 +42,5 @@ next-env.d.ts
 
 # google service account credentials (NEVER commit!)
 /credentials/
+
+.vercel

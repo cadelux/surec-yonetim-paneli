@@ -413,6 +413,7 @@ export default function Dashboard() {
         onSave={handleSaveFeedback}
         type={user?.role === 'admin' || user?.role === 'koordinator' ? 'admin' : 'sorumlu'}
         readOnly={user?.role === 'koordinator'}
+        currentUserName={user?.displayName}
       />
 
       {/* Header */}
@@ -690,7 +691,7 @@ export default function Dashboard() {
                                   title="Görüş / Mesaj Alanı"
                                 >
                                   <MessageCircle size={16} className={`md:w-5 md:h-5 ${row.sorumluGorus || row.adminYorum ? 'text-primary' : 'text-foreground/30 group-hover/gorus:text-primary transition-colors'}`} />
-                                  {((user?.role === 'admin' && row.sorumluGorus && (!row.adminYorumTarihi || (row.sorumluGorusTarihi && row.sorumluGorusTarihi > row.adminYorumTarihi))) ||
+                                  {((user?.role === 'admin' && row.sorumluGorus && !row.genelSorumluOkundu) ||
                                     (user?.role === 'sorumlu' && row.adminYorum && (!row.sorumluGorusTarihi || (row.adminYorumTarihi && row.adminYorumTarihi > row.sorumluGorusTarihi)))) && (
                                       <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 border border-card shadow-sm"></span>
                                     )}
@@ -707,8 +708,14 @@ export default function Dashboard() {
                                   <span className="text-[10px] md:text-xs text-foreground/70 line-clamp-2" title={row.notes}>
                                     {row.notes || '-'}
                                   </span>
+                                  {row.notes && row.notesTarihi && (
+                                    <span className="text-[8px] text-foreground/30 font-mono">
+                                      {new Date(row.notesTarihi).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                    </span>
+                                  )}
                                 </div>
                               </td>
+
 
                               <td className="px-3 py-3 md:px-6 md:py-4 text-center">
                                 <button
@@ -837,6 +844,7 @@ export default function Dashboard() {
         entry={feedbackEntry}
         type={user?.role === 'admin' ? 'admin' : 'sorumlu'}
         onSave={handleSaveFeedback}
+        currentUserName={user?.displayName}
       />
     </div>
   );

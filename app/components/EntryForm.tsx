@@ -54,7 +54,13 @@ export default function EntryForm({ initialData, currentUser, onSubmit, onCancel
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onSubmit(formData);
+        // notes değiştiyse veya yeni kayıt ise tarihi güncelle
+        const notesChanged = !initialData || (initialData.notes !== formData.notes);
+        const updatedData = {
+            ...formData,
+            ...(notesChanged && formData.notes ? { notesTarihi: Date.now() } : {})
+        };
+        onSubmit(updatedData);
     };
 
     const isAdmin = currentUser.role === 'admin';
