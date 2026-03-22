@@ -9,7 +9,9 @@ export type EmailEventType =
     | 'gorus_eklendi'       // Sorumlu görüş ekledi
     | 'admin_mesaj'         // Admin sorumluya mesaj gönderdi
     | 'tallimat_verildi'    // Talimat oluşturuldu
-    | 'tallimat_tamamlandi'; // Talimata geri dönüş yapıldı
+    | 'tallimat_tamamlandi' // Talimata geri dönüş yapıldı
+    | 'okundu_isaretledi'   // Kayıt admin tarafından okundu olarak işaretlendi
+    | 'eposta_onaylandi';   // E-posta adresi sistem tarafından onaylandı
 
 export interface EmailPayload {
     event: EmailEventType;

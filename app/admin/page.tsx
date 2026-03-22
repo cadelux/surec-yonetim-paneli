@@ -5,6 +5,7 @@ import { ArrowLeft, Users, MapPin, ClipboardList, Plus, Trash2, Save, Send, Layo
 import { useAuth } from "../context/AuthContext";
 import { StorageService } from "../services/storage";
 import { FirebaseStorage } from "../services/firebaseStorage";
+import { EmailService } from "../services/emailService";
 import { User, Province, UserRole, Entry, Notebook, Note, Unit, Training, EducationLog, Presentation, PresentationCategory } from "../types";
 import clsx from "clsx";
 import { UnitManagementView, UnitSelector } from "./UnitComponents";
@@ -1412,6 +1413,18 @@ function EmailManagementView() {
     const handleStatusChange = async (uid: string, status: 'approved' | 'rejected') => {
         await FirebaseStorage.updateUser(uid, { emailStatus: status });
         setUsers(prev => prev.map(u => u.uid === uid ? { ...u, emailStatus: status } : u));
+
+        if (status === 'approved') {
+            const targetUser = users.find(u => u.uid === uid);
+            if (targetUser && targetUser.email) {
+                await EmailService.send({
+                    event: 'eposta_onaylandi',
+                    actorName: 'Yönetici',
+                    description: 'Sisteme girdiğiniz e-posta adresiniz onaylanmıştır. Artık bildirimleri alabileceksiniz.',
+                    recipients: [targetUser.email]
+                });
+            }
+        }
     };
 
     const handleAdminSetEmail = async (uid: string) => {
@@ -1424,6 +1437,13 @@ function EmailManagementView() {
         setUsers(prev => prev.map(u => u.uid === uid ? { ...u, email: emailValue, emailStatus: 'approved' } : u));
         setEditingEmail(prev => { const n = { ...prev }; delete n[uid]; return n; });
         setSaving(null);
+
+        await EmailService.send({
+            event: 'eposta_onaylandi',
+            actorName: 'Yönetici',
+            description: 'Sistem tarafından adınıza e-posta adresi tanımlanmış ve onaylanmıştır. Artık bildirimleri alabileceksiniz.',
+            recipients: [emailValue]
+        });
     };
 
     const pendingCount = users.filter(u => u.emailStatus === 'pending').length;

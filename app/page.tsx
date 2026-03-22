@@ -275,6 +275,24 @@ export default function Dashboard() {
         // Actually, better to keep history? User wants "date and time visible". So if unchecked and rechecked, new date.
       } else if (field === 'genelSorumluOkundu') {
         updateData.genelSorumluOkunduTarihi = isChecking ? Date.now() : null;
+
+        // Okundu bildirimi gönder (eğer işaretleniyorsa)
+        if (isChecking) {
+          const allUsers = await FirebaseStorage.getUsers();
+          const targetUsers = allUsers.filter(u => u.uid === entry.koordinatorId || u.uid === entry.sorumluId);
+          if (targetUsers.length > 0) {
+            const recipients = EmailService.filterApprovedEmails(targetUsers);
+            if (recipients.length > 0) {
+              await EmailService.send({
+                event: 'okundu_isaretledi',
+                actorName: user?.displayName || 'Yönetici',
+                provinceName: entry.provinceName,
+                description: 'Girdiğiniz not veya görüş yönetici tarafından incelenip "Okundu" olarak işaretlenmiştir.',
+                recipients
+              });
+            }
+          }
+        }
       }
 
       await FirebaseStorage.updateEntry(entry.id, updateData);

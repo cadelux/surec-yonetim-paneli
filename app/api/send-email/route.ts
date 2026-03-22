@@ -9,6 +9,8 @@ const EVENT_LABELS: Record<string, string> = {
     admin_mesaj: 'Mesaj Gönderdi',
     tallimat_verildi: 'Talimat Verdi',
     tallimat_tamamlandi: 'Talimata Geri Döndü',
+    okundu_isaretledi: 'Okundu Olarak İşaretledi',
+    eposta_onaylandi: 'E-Posta Adresinizi Onayladı',
 };
 
 function buildEmailHtml(payload: {
@@ -129,8 +131,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: 'Alıcı bulunamadı.' }, { status: 200 });
         }
 
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            return NextResponse.json({ message: 'E-posta yapılandırması (EMAIL_USER/EMAIL_PASS) eksik.' }, { status: 500 });
+        if (!process.env.KONYEVI_EMAIL_USER || !process.env.KONYEVI_EMAIL_PASS) {
+            return NextResponse.json({ message: 'E-posta yapılandırması (KONYEVI_EMAIL_USER/KONYEVI_EMAIL_PASS) eksik.' }, { status: 500 });
         }
 
         const eventLabel = EVENT_LABELS[event] || 'Güncelleme';
@@ -149,13 +151,13 @@ export async function POST(req: NextRequest) {
         const transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS
+                user: process.env.KONYEVI_EMAIL_USER,
+                pass: process.env.KONYEVI_EMAIL_PASS
             }
         });
 
         await transporter.sendMail({
-            from: `"KG Süreç Yönetimi" <${process.env.EMAIL_USER}>`,
+            from: `"KG Süreç Yönetimi" <${process.env.KONYEVI_EMAIL_USER}>`,
             bcc: recipients, // Birden fazla kişiye atınca başkalarının maillerini görmesinler diye Gizli Karbon Kopya (BCC)
             subject,
             html: htmlContent
