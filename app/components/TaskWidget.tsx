@@ -3,6 +3,7 @@ import { ClipboardList, CheckCircle2, Clock, ChevronDown, ChevronUp, AlertCircle
 import { Task, User } from '../types';
 import { FirebaseStorage } from '../services/firebaseStorage';
 import TaskCreationModal from './TaskCreationModal';
+import { EmailService } from '../services/emailService';
 
 interface TaskWidgetProps {
     user: User;
@@ -129,8 +130,22 @@ export default function TaskWidget({ user }: TaskWidgetProps) {
         if (!completingTask || !completionNote.trim()) return;
 
         await FirebaseStorage.updateTaskStatus(completingTask.id, 'completed', completionNote);
+
+        // Talimatı verene bildirim at
+        const allUsers = await FirebaseStorage.getUsers();
+        const sender = allUsers.find(u => u.uid === completingTask.assignedBy);
+        if (sender) {
+            const recipients = EmailService.filterApprovedEmails([sender]);
+            await EmailService.send({
+                event: 'tallimat_tamamlandi',
+                actorName: user.displayName,
+                description: `"${completingTask.title}" görevine geri dönüş: ${completionNote}`,
+                recipients
+            });
+        }
+
         setCompletingTask(null);
-        loadTasks(); // Reload to refresh lists
+        loadTasks();
     };
 
     const handleDeleteTask = async (task: Task) => {

@@ -15,6 +15,8 @@ import UserEducationView from './components/UserEducationView';
 import EducationDashboard from './components/EducationDashboard';
 import FeedbackModal from './components/FeedbackModal';
 import TaskWidget from './components/TaskWidget';
+import { EmailService } from './services/emailService';
+import UserEmailSettings from './components/UserEmailSettings';
 
 
 
@@ -48,6 +50,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [activeTab, setActiveTab] = useState<'entries' | 'educations'>('entries');
+  const [showEmailSettings, setShowEmailSettings] = useState(false);
 
   // Education Dashboard Logic
   // Check if user is 'sorumlu' and unit includes 'eğitim'
@@ -166,6 +169,25 @@ export default function Dashboard() {
   const handleFormSubmit = async (data: Partial<Entry>) => {
     if (editingEntry) {
       await FirebaseStorage.updateEntry(editingEntry.id, data);
+
+      // Not değiştiyse bildirim gönder
+      if (data.notes && data.notes !== editingEntry.notes) {
+        const allUsers = await FirebaseStorage.getUsers();
+        const recipients = EmailService.filterApprovedEmails(
+          allUsers.filter(u =>
+            u.uid === editingEntry.koordinatorId ||
+            u.uid === editingEntry.sorumluId ||
+            u.role === 'admin'
+          )
+        );
+        await EmailService.send({
+          event: 'not_eklendi',
+          actorName: user?.displayName || 'Kullanıcı',
+          provinceName: editingEntry.provinceName,
+          description: data.notes,
+          recipients
+        });
+      }
     } else {
       const newEntry: Entry = {
         id: '', // Firestore will assign
@@ -272,19 +294,51 @@ export default function Dashboard() {
   };
 
   const handleSaveFeedback = async (entryId: string, feedback: string) => {
+    const targetEntry = entries.find(e => e.id === entryId);
     if (user?.role === 'admin') {
       await FirebaseStorage.updateEntry(entryId, {
         adminYorum: feedback,
         adminYorumTarihi: Date.now(),
-        adminOnay: true // If admin sends a message, implicitly 'approved' or 'replied'
+        adminOnay: true
       });
+      // Sorumlunun onaylı emaili varsa bildirim at
+      if (targetEntry) {
+        const allUsers = await FirebaseStorage.getUsers();
+        const recipients = EmailService.filterApprovedEmails(
+          allUsers.filter(u => u.uid === targetEntry.sorumluId)
+        );
+        await EmailService.send({
+          event: 'admin_mesaj',
+          actorName: user.displayName,
+          provinceName: targetEntry.provinceName,
+          description: feedback,
+          recipients
+        });
+      }
     } else {
       await FirebaseStorage.updateEntry(entryId, {
         sorumluGorus: feedback,
         sorumluGorusTarihi: Date.now(),
-        adminOnay: false, // Reset approval so it shows up in "Pending" list for admin
-        genelSorumluOkundu: false // Reset read status
+        adminOnay: false,
+        genelSorumluOkundu: false
       });
+      // Admin ve koordinatöre bildirim at
+      if (targetEntry) {
+        const allUsers = await FirebaseStorage.getUsers();
+        const recipients = EmailService.filterApprovedEmails(
+          allUsers.filter(u =>
+            u.role === 'admin' ||
+            u.uid === targetEntry.koordinatorId
+          )
+        );
+        await EmailService.send({
+          event: 'gorus_eklendi',
+          actorName: user?.displayName || 'Sorumlu',
+          provinceName: targetEntry.provinceName,
+          description: feedback,
+          recipients
+        });
+      }
     }
     await refreshData();
   };
@@ -455,11 +509,23 @@ export default function Dashboard() {
             )}
 
             <div className="flex flex-col items-end">
-              <span className="text-xs md:text-sm font-medium text-foreground max-w-[80px] md:max-w-none truncate">{user.displayName}</span>
+              <button
+                onClick={() => setShowEmailSettings(v => !v)}
+                className="text-xs md:text-sm font-medium text-foreground hover:text-primary transition-colors max-w-[80px] md:max-w-none truncate"
+                title="E-posta ayarları"
+              >
+                {user.displayName}
+              </button>
               <span className="text-[9px] md:text-xs text-foreground/50 capitalize text-right">
                 {user.role === 'sorumlu' && user.unit ? `${user.unit} Sorumlusu` : user.role}
               </span>
             </div>
+            {/* E-posta ayarları mini panel */}
+            {showEmailSettings && (
+              <div className="absolute top-full right-0 mt-2 w-80 bg-card border border-border rounded-2xl shadow-2xl p-5 z-50 animate-slide-in">
+                <UserEmailSettings user={user} onUpdate={refreshData} />
+              </div>
+            )}
 
             {(user.role === 'sorumlu' || user.role === 'koordinator') && !isEducationResponsible && (
               <button

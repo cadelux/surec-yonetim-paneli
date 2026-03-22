@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Users, MapPin, ClipboardList, Plus, Trash2, Save, Send, LayoutGrid, Book, Sparkles, Calendar, MessageCircle, CheckSquare, Square, Eye, EyeOff, Key, Building, GraduationCap, Sun, Moon, BookOpen } from "lucide-react";
+import { ArrowLeft, Users, MapPin, ClipboardList, Plus, Trash2, Save, Send, LayoutGrid, Book, Sparkles, Calendar, MessageCircle, CheckSquare, Square, Eye, EyeOff, Key, Building, GraduationCap, Sun, Moon, BookOpen, Mail, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { StorageService } from "../services/storage";
 import { FirebaseStorage } from "../services/firebaseStorage";
@@ -15,7 +15,7 @@ const PROVINCES_ALL = ["ADANA", "ADIYAMAN", "AFYONKARAHİSAR", "AĞRI", "AKSARAY
 export default function AdminPage() {
     const { user } = useAuth();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'users' | 'provinces' | 'reports' | 'analysis' | 'notes' | 'feedback' | 'units' | 'education'>('analysis');
+    const [activeTab, setActiveTab] = useState<'users' | 'provinces' | 'reports' | 'analysis' | 'notes' | 'feedback' | 'units' | 'education' | 'email'>('analysis');
     const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
     // Security Check
@@ -130,6 +130,12 @@ export default function AdminPage() {
                             icon={<MessageCircle size={18} />}
                             label="Geri Bildirimler"
                         />
+                        <TabButton
+                            active={activeTab === 'email'}
+                            onClick={() => setActiveTab('email')}
+                            icon={<Mail size={18} />}
+                            label="E-posta Yönetimi"
+                        />
                     </div>
 
                     {/* Content Area */}
@@ -142,6 +148,7 @@ export default function AdminPage() {
                         {activeTab === 'units' && <UnitManagementView />}
                         {activeTab === 'notes' && <NotesManagementView />}
                         {activeTab === 'feedback' && <FeedbackManagementView />}
+                        {activeTab === 'email' && <EmailManagementView />}
                     </div>
                 </div>
             </main>
@@ -1386,3 +1393,158 @@ const EducationManagementView = () => {
         </div>
     );
 };
+
+function EmailManagementView() {
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [editingEmail, setEditingEmail] = useState<Record<string, string>>({});
+    const [saving, setSaving] = useState<string | null>(null);
+
+    const fetchUsers = async () => {
+        setLoading(true);
+        const data = await FirebaseStorage.getUsers();
+        setUsers(data.filter(u => u.username !== 'admin' || u.role === 'admin'));
+        setLoading(false);
+    };
+
+    useEffect(() => { fetchUsers(); }, []);
+
+    const handleStatusChange = async (uid: string, status: 'approved' | 'rejected') => {
+        await FirebaseStorage.updateUser(uid, { emailStatus: status });
+        setUsers(prev => prev.map(u => u.uid === uid ? { ...u, emailStatus: status } : u));
+    };
+
+    const handleAdminSetEmail = async (uid: string) => {
+        const emailValue = editingEmail[uid]?.trim();
+        if (!emailValue) return;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailValue)) { alert('Geçerli bir e-posta giriniz.'); return; }
+        setSaving(uid);
+        await FirebaseStorage.updateUser(uid, { email: emailValue, emailStatus: 'approved' });
+        setUsers(prev => prev.map(u => u.uid === uid ? { ...u, email: emailValue, emailStatus: 'approved' } : u));
+        setEditingEmail(prev => { const n = { ...prev }; delete n[uid]; return n; });
+        setSaving(null);
+    };
+
+    const pendingCount = users.filter(u => u.emailStatus === 'pending').length;
+
+    if (loading) return (
+        <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    );
+
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-bold tracking-tight">E-posta Yönetimi</h2>
+                    <p className="text-sm text-foreground/60">Kullanıcıların e-posta adreslerini onaylayın veya kendiniz atayın.</p>
+                </div>
+                {pendingCount > 0 && (
+                    <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl">
+                        <Clock size={16} className="text-yellow-500" />
+                        <span className="text-sm font-bold text-yellow-700 dark:text-yellow-400">{pendingCount} onay bekliyor</span>
+                    </div>
+                )}
+            </div>
+
+            <div className="space-y-3">
+                {users.map(u => {
+                    const statusBadge = !u.email ? (
+                        <span className="text-xs text-foreground/30 italic">E-posta eklenmemiş</span>
+                    ) : u.emailStatus === 'approved' ? (
+                        <span className="flex items-center gap-1 text-xs font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2.5 py-1 rounded-full border border-green-200 dark:border-green-800">
+                            <CheckCircle size={12} /> Onaylı
+                        </span>
+                    ) : u.emailStatus === 'pending' ? (
+                        <span className="flex items-center gap-1 text-xs font-bold text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-2.5 py-1 rounded-full border border-yellow-200 dark:border-yellow-800">
+                            <Clock size={12} /> Beklemede
+                        </span>
+                    ) : (
+                        <span className="flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2.5 py-1 rounded-full border border-red-200 dark:border-red-800">
+                            <XCircle size={12} /> Reddedildi
+                        </span>
+                    );
+
+                    return (
+                        <div key={u.uid} className="p-5 bg-background border border-border rounded-2xl space-y-4">
+                            {/* Kullanıcı Bilgisi */}
+                            <div className="flex items-center justify-between flex-wrap gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+                                        {u.displayName[0].toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div className="font-semibold text-sm">{u.displayName}</div>
+                                        <div className="text-[10px] text-foreground/40">@{u.username} · {u.role}</div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {u.email && <span className="text-xs text-foreground/60 font-mono">{u.email}</span>}
+                                    {statusBadge}
+                                </div>
+                            </div>
+
+                            {/* Aksiyon Satırı */}
+                            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/50">
+                                {/* Admin tarafından e-posta belirleme */}
+                                <div className="flex gap-2 flex-1 min-w-[200px]">
+                                    <input
+                                        type="email"
+                                        placeholder="Admin olarak e-posta ata..."
+                                        value={editingEmail[u.uid] ?? (u.email || '')}
+                                        onChange={e => setEditingEmail(prev => ({ ...prev, [u.uid]: e.target.value }))}
+                                        className="flex-1 px-3 py-1.5 bg-surface border border-border rounded-lg text-xs focus:outline-none focus:border-primary transition-all"
+                                    />
+                                    <button
+                                        onClick={() => handleAdminSetEmail(u.uid)}
+                                        disabled={saving === u.uid}
+                                        className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-hover disabled:opacity-50 transition-all"
+                                    >
+                                        {saving === u.uid ? '...' : 'Ata & Onayla'}
+                                    </button>
+                                </div>
+
+                                {/* Onay/Red butonları (kullanıcı kendi yazmışsa) */}
+                                {u.email && u.emailStatus === 'pending' && (
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleStatusChange(u.uid, 'approved')}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-xs font-bold transition-all"
+                                        >
+                                            <CheckCircle size={12} /> Onayla
+                                        </button>
+                                        <button
+                                            onClick={() => handleStatusChange(u.uid, 'rejected')}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-bold transition-all"
+                                        >
+                                            <XCircle size={12} /> Reddet
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Onay geri al */}
+                                {u.email && u.emailStatus === 'approved' && (
+                                    <button
+                                        onClick={() => handleStatusChange(u.uid, 'rejected')}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-xs font-bold transition-all"
+                                    >
+                                        <XCircle size={12} /> Onayı Kaldır
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+
+                {users.length === 0 && (
+                    <div className="text-center py-12 text-foreground/30 border-2 border-dashed border-border rounded-3xl">
+                        <Mail size={48} className="mx-auto mb-4 opacity-10" />
+                        <p className="text-sm font-bold uppercase tracking-widest">Kullanıcı bulunamadı.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

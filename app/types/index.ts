@@ -9,6 +9,8 @@ export interface User {
     createdAt: number; // timestamp
     password?: string;
     unit?: string; // e.g. "Teşkilat", "Eğitim", "Mali", "Sosyal Medya"
+    email?: string;                                    // Kullanıcının girdiği e-posta
+    emailStatus?: 'pending' | 'approved' | 'rejected'; // Admin onay durumu
 }
 
 export interface Unit {

@@ -528,29 +528,62 @@ function UploadModal({ user, categories, onClose, onUploaded }: {
         setErrorMsg('');
 
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('title', title.trim());
+            // 1. Sunucudan 1 saatlik anlık Yükleme Anahtarı Al
+            const tokenRes = await fetch('/api/get-drive-token');
+            const tokenData = await tokenRes.json();
 
-            const res = await fetch('/api/upload-presentation', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'Yükleme başarısız');
+            if (!tokenRes.ok) {
+                throw new Error(tokenData.error || 'Yükleme anahtarı alınamadı.');
             }
 
-            // Save to Firestore
+            const accessToken = tokenData.token;
+            const folderId = tokenData.folderId;
+
+            // 2. Tarayıcıdan Vercel'i hiç meşgul etmeden Birebir Google Drive'a gönder
+            const metadata = {
+                name: title.trim(),
+                parents: [folderId]
+            };
+
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', file);
+
+            const uploadRes = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,name,webViewLink,webContentLink', {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`
+                },
+                body: form
+            });
+
+            const driveData = await uploadRes.json();
+
+            if (!uploadRes.ok) {
+                throw new Error(driveData.error?.message || 'Drive yükleme başarısız. Lütfen tekrar deneyin.');
+            }
+
+            // 3. Dosyayı Herkese Açık (Sadece Okunabilir) Yap
+            await fetch(`https://www.googleapis.com/drive/v3/files/${driveData.id}/permissions?supportsAllDrives=true`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    role: 'reader',
+                    type: 'anyone'
+                })
+            });
+
+            // 4. Firestore veritabanımıza kaydet (Uygulamamızın görüp listelemesi için)
             const newPresentation = await FirebaseStorage.addPresentation({
                 title: title.trim(),
                 category,
-                driveFileId: data.fileId,
-                embedUrl: data.embedUrl,
-                viewUrl: data.viewUrl,
-                fileName: data.fileName,
+                driveFileId: driveData.id,
+                embedUrl: `https://drive.google.com/file/d/${driveData.id}/preview`,
+                viewUrl: `https://drive.google.com/file/d/${driveData.id}/view`,
+                fileName: driveData.name,
                 uploadedBy: user.uid,
                 uploaderName: user.displayName,
                 uploadedAt: Date.now(),

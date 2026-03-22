@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { FirebaseStorage } from '../services/firebaseStorage';
 import { X, Send } from 'lucide-react';
+import { EmailService } from '../services/emailService';
 
 interface TaskCreationModalProps {
     isOpen: boolean;
@@ -69,6 +70,19 @@ export default function TaskCreationModal({ isOpen, onClose, currentUser, onTask
                 status: 'pending',
                 // assignedToUnit: ... optionally derive from user
             });
+
+            // Talimat gönderilen kişiye email at
+            const targetUser = users.find(u => u.uid === selectedUserId);
+            if (targetUser) {
+                const recipients = EmailService.filterApprovedEmails([targetUser]);
+                await EmailService.send({
+                    event: 'tallimat_verildi',
+                    actorName: currentUser.displayName,
+                    description: `Yeni Talimat: ${title}\n${description}`,
+                    recipients
+                });
+            }
+
             onTaskCreated();
             onClose();
             // Reset
